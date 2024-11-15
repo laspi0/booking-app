@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:register/screens/home/home_screen.dart';
+
 import 'signup_screen.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
@@ -65,7 +67,13 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (result['success']) {
-        // Navigation vers la page d'accueil ici
+         if (!mounted) return;
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(
+      builder: (context) => const HomeScreen(),
+    ),
+    (route) => false,
+  );
       }
     } finally {
       if (mounted) {

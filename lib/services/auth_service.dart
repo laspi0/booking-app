@@ -46,7 +46,7 @@ class AuthService {
       };
     }
   }
-
+// 
   // Ajouter cette méthode dans votre AuthService existant
   Future<Map<String, dynamic>> login({
     required String email,
