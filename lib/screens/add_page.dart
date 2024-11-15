@@ -22,12 +22,12 @@ class AddPage extends StatelessWidget {
                       height: 45,
                       width: 45,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6200EE).withOpacity(0.1),
+                        color: AppTheme.primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
-                        color: Color(0xFF6200EE),
+                        color: AppTheme.primaryColor,
                         size: 20,
                       ),
                     ),
@@ -56,13 +56,13 @@ class AddPage extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF6200EE).withOpacity(0.1),
-                            const Color(0xFF9747FF).withOpacity(0.1),
+                            AppTheme.primaryColor.withOpacity(0.1),
+                            AppTheme.primaryColor.withOpacity(0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(
-                          color: const Color(0xFF6200EE).withOpacity(0.1),
+                          color: AppTheme.primaryColor.withOpacity(0.1),
                           width: 2,
                         ),
                       ),
@@ -77,7 +77,7 @@ class AddPage extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF6200EE).withOpacity(0.2),
+                                    color: AppTheme.primaryColor.withOpacity(0.2),
                                     blurRadius: 15,
                                     offset: const Offset(0, 5),
                                   ),
@@ -85,7 +85,7 @@ class AddPage extends StatelessWidget {
                               ),
                               child: const Icon(
                                 Icons.add_photo_alternate_outlined,
-                                color: Color(0xFF6200EE),
+                                color: AppTheme.primaryColor,
                                 size: 32,
                               ),
                             ),
@@ -95,7 +95,7 @@ class AddPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF6200EE),
+                                color: AppTheme.primaryColor,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -186,12 +186,12 @@ class AddPage extends StatelessWidget {
                       height: 60,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6200EE), Color(0xFF9747FF)],
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor],
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6200EE).withOpacity(0.3),
+                            color: AppTheme.primaryColor.withOpacity(0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -234,12 +234,12 @@ class AddPage extends StatelessWidget {
           hintText: hint,
           prefixIcon: Icon(
             icon,
-            color: const Color(0xFF6200EE),
+            color: AppTheme.primaryColor,
             size: 22,
           ),
           suffixText: suffix,
           suffixStyle: const TextStyle(
-            color: Color(0xFF6200EE),
+            color: AppTheme.primaryColor,
             fontWeight: FontWeight.w500,
           ),
           border: InputBorder.none,
