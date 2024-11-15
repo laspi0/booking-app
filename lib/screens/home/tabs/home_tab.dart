@@ -1,6 +1,8 @@
-// screens/home/tabs/home_tab.dart
 import 'package:flutter/material.dart';
+import 'package:register/screens/add_page.dart';
+
 import '../../../config/theme.dart';
+
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
@@ -74,7 +76,18 @@ class HomeTab extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Icon(Icons.add, size: 24, color: AppTheme.primaryColor),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        color: AppTheme.primaryColor,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddPage(),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
