@@ -1,71 +1,70 @@
-// lib/screens/create_listing_screen.dart
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../services/listing_service.dart';
+import '../models/listing_model.dart';
 
-class CreateListingScreen extends StatefulWidget {
+class AddListingScreen extends StatefulWidget {
   @override
-  _CreateListingScreenState createState() => _CreateListingScreenState();
+  _AddListingScreenState createState() => _AddListingScreenState();
 }
 
-class _CreateListingScreenState extends State<CreateListingScreen> {
+class _AddListingScreenState extends State<AddListingScreen> {
   final _formKey = GlobalKey<FormState>();
-  final ListingService _listingService = ListingService();
-  final ImagePicker _picker = ImagePicker();
+  final _listingService = ListingService();
 
-  String title = '';
-  String description = '';
-  double price = 0;
-  String measurement = '';
-  String type = 'apartment';
-  String address = '';
-  List<XFile> photos = [];
-  bool isLoading = false;
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _measurementController = TextEditingController();
+  final _typeController = TextEditingController();
+  final _addressController = TextEditingController();
+  
+  List<XFile> _photos = [];
 
-  Future<void> _pickImages() async {
-    final List<XFile>? selectedPhotos = await _picker.pickMultiImage();
-    if (selectedPhotos != null) {
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _measurementController.dispose();
+    _typeController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickPhotos() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles != null) {
       setState(() {
-        photos.addAll(selectedPhotos);
+        _photos = pickedFiles;
       });
     }
   }
 
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate() && photos.isNotEmpty) {
-      setState(() {
-        isLoading = true;
-      });
+  Future<void> _submitListing() async {
+    if (!_formKey.currentState!.validate() || _photos.isEmpty) return;
 
-      try {
-        final listing = await _listingService.createListing(
-          title: title,
-          description: description,
-          price: price,
-          measurement: measurement,
-          type: type,
-          address: address,
-          photos: photos,
-        );
+    try {
+      Listing listing = await _listingService.createListing(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        price: double.parse(_priceController.text),
+        measurement: _measurementController.text,
+        type: _typeController.text,
+        address: _addressController.text,
+        photos: _photos,
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Annonce "${listing.title}" créée avec succès')),
-        );
-        Navigator.of(context)
-            .pop(listing); // Retourne le listing à l'écran précédent
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la création de l\'annonce')),
-        );
-      } finally {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Listing created: ${listing.title}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create listing: $e')),
+      );
     }
   }
 
@@ -73,96 +72,72 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Créer une annonce'),
+        title: Text('Add Listing'),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Titre'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
-                onChanged: (value) => title = value,
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
-                onChanged: (value) => description = value,
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Prix'),
-                keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
-                onChanged: (value) => price = double.tryParse(value) ?? 0,
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Surface'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
-                onChanged: (value) => measurement = value,
-              ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: type,
-                decoration: InputDecoration(labelText: 'Type de bien'),
-                items: ['room', 'studio', 'apartment', 'villa']
-                    .map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type),
-                        ))
-                    .toList(),
-                onChanged: (value) => setState(() => type = value!),
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Adresse'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
-                onChanged: (value) => address = value,
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _pickImages,
-                child: Text('Ajouter des photos'),
-              ),
-              SizedBox(height: 8),
-              if (photos.isNotEmpty)
-                Container(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: photos.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: Image.file(
-                          File(photos[index].path),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(labelText: 'Title'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a title' : null,
                 ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: isLoading ? null : _submitForm,
-                child: isLoading
-                    ? CircularProgressIndicator()
-                    : Text('Créer l\'annonce'),
-              ),
-            ],
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a description' : null,
+                ),
+                TextFormField(
+                  controller: _priceController,
+                  decoration: InputDecoration(labelText: 'Price'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value!.isEmpty ? 'Please enter a price' : null,
+                ),
+                TextFormField(
+                  controller: _measurementController,
+                  decoration: InputDecoration(labelText: 'Measurement'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a measurement' : null,
+                ),
+                TextFormField(
+                  controller: _typeController,
+                  decoration: InputDecoration(labelText: 'Type'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a type' : null,
+                ),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: InputDecoration(labelText: 'Address'),
+                  validator: (value) => value!.isEmpty ? 'Please enter an address' : null,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _pickPhotos,
+                  child: Text('Pick Photos'),
+                ),
+                SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _photos.map((photo) {
+                    return Image.file(
+                      File(photo.path),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _submitListing,
+                  child: Text('Create Listing'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

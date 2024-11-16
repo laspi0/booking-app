@@ -1,249 +1,177 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../services/listing_service.dart';
+import '../models/listing_model.dart';
 
-class AddPage extends StatelessWidget {
-  const AddPage({super.key});
+class AddPage extends StatefulWidget {
+  const AddPage({Key? key}) : super(key: key);
+
+  @override
+  _AddPageState createState() => _AddPageState();
+}
+
+class _AddPageState extends State<AddPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _listingService = ListingService();
+
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _measurementController = TextEditingController();
+  final _addressController = TextEditingController();
+
+  String? _selectedType;
+  List<XFile> _photos = [];
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _measurementController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickPhotos() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles != null) {
+      setState(() {
+        _photos = pickedFiles;
+      });
+      print('Photos picked: ${_photos.map((photo) => photo.path).join(', ')}');
+    } else {
+      print('No photos selected');
+    }
+  }
+
+  Future<void> _submitListing() async {
+    if (!_formKey.currentState!.validate() || _selectedType == null) {
+      print('Form validation failed');
+      return;
+    }
+
+    if (_photos.isEmpty) {
+      print('No photos selected');
+      return;
+    }
+
+    print('Form validated, proceeding with submission');
+    print('Title: ${_titleController.text}');
+    print('Description: ${_descriptionController.text}');
+    print('Price: ${_priceController.text}');
+    print('Measurement: ${_measurementController.text}');
+    print('Type: $_selectedType');
+    print('Address: ${_addressController.text}');
+    print('Photos count: ${_photos.length}');
+
+    try {
+      Listing listing = await _listingService.createListing(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        price: double.parse(_priceController.text),
+        measurement: _measurementController.text,
+        type: _selectedType!,
+        address: _addressController.text,
+        photos: _photos,
+      );
+
+      print('Listing created: ${listing.title}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Listing created: ${listing.title}')),
+      );
+    } catch (e) {
+      print('Failed to create listing: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create listing: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      height: 45,
-                      width: 45,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: AppTheme.primaryColor,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  const Text(
-                    'Nouvelle annonce',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.primaryColor.withOpacity(0.1),
-                            AppTheme.primaryColor.withOpacity(0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.2),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.add_photo_alternate_outlined,
-                                color: AppTheme.primaryColor,
-                                size: 32,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            const Text(
-                              'Ajouter des photos',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Format JPG, PNG (Max. 5 Mo)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 25),
-                    const Text(
-                      'Informations principales',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildTextField('Titre de l\'annonce', Icons.edit),
-                    const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField('Prix', Icons.euro, suffix: '€'),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: _buildTextField('Surface', Icons.square_foot, suffix: 'm²'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField('Chambres', Icons.bed),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: _buildTextField('Salles de bain', Icons.bathroom),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 25),
-                    const Text(
-                      'Localisation',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildTextField('Adresse complète', Icons.location_on),
-                    const SizedBox(height: 25),
-                    const Text(
-                      'Description',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.grey[200]!,
-                        ),
-                      ),
-                      child: const TextField(
-                        maxLines: 5,
-                        decoration: InputDecoration(
-                          hintText: 'Description détaillée du bien...',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.all(20),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Container(
-                      width: double.infinity,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppTheme.primaryColor, AppTheme.primaryColor],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Publier l\'annonce',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
+      appBar: AppBar(
+        title: Text('Add Listing'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(labelText: 'Title'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a title' : null,
                 ),
-              ),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a description' : null,
+                ),
+                TextFormField(
+                  controller: _priceController,
+                  decoration: InputDecoration(labelText: 'Price'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value!.isEmpty ? 'Please enter a price' : null,
+                ),
+                TextFormField(
+                  controller: _measurementController,
+                  decoration: InputDecoration(labelText: 'Measurement'),
+                  validator: (value) => value!.isEmpty ? 'Please enter a measurement' : null,
+                ),
+                DropdownButtonFormField<String>(
+                  value: _selectedType,
+                  decoration: InputDecoration(labelText: 'Type'),
+                  items: ['room', 'studio', 'apartment', 'villa'].map((String type) {
+                    return DropdownMenuItem<String>(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedType = value;
+                    });
+                  },
+                  validator: (value) => value == null ? 'Please select a type' : null,
+                ),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: InputDecoration(labelText: 'Address'),
+                  validator: (value) => value!.isEmpty ? 'Please enter an address' : null,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _pickPhotos,
+                  child: Text('Pick Photos'),
+                ),
+                SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _photos.map((photo) {
+                    return Image.file(
+                      File(photo.path),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _submitListing,
+                  child: Text('Create Listing'),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(String hint, IconData icon, {String? suffix}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.grey[200]!,
-        ),
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(
-            icon,
-            color: AppTheme.primaryColor,
-            size: 22,
           ),
-          suffixText: suffix,
-          suffixStyle: const TextStyle(
-            color: AppTheme.primaryColor,
-            fontWeight: FontWeight.w500,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(20),
         ),
       ),
     );

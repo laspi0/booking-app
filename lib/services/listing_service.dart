@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/listing_model.dart';
 import '../config/app_config.dart';
+import 'token_service.dart';
 
 class ListingService {
   final Dio _dio = Dio();
@@ -18,7 +19,7 @@ class ListingService {
     try {
       FormData formData = FormData();
       
-      // Ajout des champs texte
+      // Adding text fields
       formData.fields.addAll([
         MapEntry('title', title),
         MapEntry('description', description),
@@ -28,7 +29,7 @@ class ListingService {
         MapEntry('address', address),
       ]);
 
-      // Ajout des photos
+      // Adding photos
       for (var photo in photos) {
         formData.files.add(
           MapEntry(
@@ -41,19 +42,35 @@ class ListingService {
         );
       }
 
+      String? token = await TokenService.getToken();
+      print('Token: $token');
+
+      if (token == null) {
+        throw Exception('No token found. Please login again.');
+      }
+
+      print('Sending data to API: $formData');
+
       final response = await _dio.post(
         '${AppConfig.baseUrl}/listings',
         data: formData,
         options: Options(
           headers: {
-            'Authorization': 'Bearer YOUR_TOKEN_HERE',
+            'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         ),
       );
 
+      print('Response from API: ${response.data}');
+
       return Listing.fromJson(response.data['listing']);
-    } catch (e) {
+    } on DioException catch (e) {
+      if (e.response != null) {
+        print('API call failed with response: ${e.response?.data}');
+      } else {
+        print('API call failed without response: $e');
+      }
       throw Exception('Failed to create listing: $e');
     }
   }
