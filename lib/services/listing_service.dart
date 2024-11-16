@@ -1,12 +1,10 @@
-// lib/services/listing_service.dart
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../models/listing_model.dart';
+import '../config/app_config.dart';
 
 class ListingService {
   final Dio _dio = Dio();
-  final String baseUrl = 'http://192.168.1.11:8000/api/listings';
 
   Future<Listing> createListing({
     required String title,
@@ -44,7 +42,7 @@ class ListingService {
       }
 
       final response = await _dio.post(
-        '$baseUrl/listings',
+        '${AppConfig.baseUrl}/listings',
         data: formData,
         options: Options(
           headers: {

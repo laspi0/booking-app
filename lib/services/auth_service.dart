@@ -2,17 +2,16 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import 'token_service.dart';
+import '../config/app_config.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://192.168.1.11:8000/api';
-
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse('${AppConfig.baseUrl}/login'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -72,7 +71,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse('${AppConfig.baseUrl}/register'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -118,7 +117,7 @@ class AuthService {
       final token = await TokenService.getToken();
       if (token != null) {
         await http.post(
-          Uri.parse('$baseUrl/logout'),
+          Uri.parse('${AppConfig.baseUrl}/logout'),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
