@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:register/screens/home/home_screen.dart';
-
-import 'signup_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:register/screens/home/home_screen.dart';
+import '../../models/user.dart';
+import 'signup_screen.dart';
 import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -48,39 +48,59 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+ 
+ Future<void> _login() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final result = await _authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+  try {
+    final result = await _authService.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    print('Result: $result'); // Debugging line
+
+    if (!mounted) return;
+
+    if (result['success'] && result['user'] != null) {
+      User user = User.fromJson(result['user']);
+
+      print('User: $user'); // Debugging line
+
+      _showSnackBar(result['message'] ?? 'Connexion réussie', isError: false);
 
       if (!mounted) return;
 
-      _showSnackBar(
-        result['message']!,
-        isError: !result['success'],
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(user: user),
+        ),
+        (route) => false,
       );
-
-      if (result['success']) {
-         if (!mounted) return;
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(
-      builder: (context) => const HomeScreen(),
-    ),
-    (route) => false,
-  );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    } else {
+      _showSnackBar(
+        result['message'] ?? 'Échec de la connexion',
+        isError: true,
+      );
+    }
+  } catch (e) {
+    print('Error: $e'); // Debugging line
+    if (mounted) {
+      _showSnackBar(
+        'Une erreur est survenue lors de la connexion',
+        isError: true,
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
+}
+
+
 
   void _showSnackBar(String message, {bool isError = true}) {
     if (!mounted) return;
@@ -88,11 +108,42 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
 
-  @override
+  void _navigateToSignUp() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SignUpScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+
+          var tween = Tween(begin: begin, end: end).chain(
+            CurveTween(curve: curve),
+          );
+          var offsetAnimation = animation.drive(tween);
+
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+  }
+
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -118,115 +169,162 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Connectez-vous pour continuer',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
-                TextFormField(
-                  controller: _emailController,
-                  validator: _validateEmail,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                ),
+                _buildEmailField(),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  validator: _validatePassword,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    hintText: 'Mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                ),
+                _buildPasswordField(),
                 const SizedBox(height: 24),
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Se connecter',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
+                _buildLoginButton(),
                 const SizedBox(height: 16),
-                TextButton(
-                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const SignUpScreen(),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                          const begin = Offset(1.0, 0.0); // Début de la transition (à droite)
-                          const end = Offset.zero; // Fin de la transition (position finale)
-                          const curve = Curves.easeInOut; // Courbe de l'animation
-
-                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                          var offsetAnimation = animation.drive(tween);
-
-                          return SlideTransition(
-                            position: offsetAnimation,
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Pas encore de compte ? S\'inscrire',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigation vers la page de récupération de mot de passe
-                  },
-                  child: Text(
-                    'Mot de passe oublié ?',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
+                _buildSignUpButton(),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      validator: _validateEmail,
+      keyboardType: TextInputType.emailAddress,
+      autocorrect: false,
+      enableSuggestions: false,
+      decoration: InputDecoration(
+        hintText: 'Email',
+        prefixIcon: const Icon(Icons.email_outlined),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.grey.shade300,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      validator: _validatePassword,
+      obscureText: !_isPasswordVisible,
+      decoration: InputDecoration(
+        hintText: 'Mot de passe',
+        prefixIcon: const Icon(Icons.lock_outline),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey,
+          ),
+          onPressed: () {
+            setState(() {
+              _isPasswordVisible = !_isPasswordVisible;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.grey.shade300,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _login,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 2,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                'Se connecter',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildSignUpButton() {
+    return TextButton(
+      onPressed: _navigateToSignUp,
+      child: Text(
+        'Pas encore de compte ? S\'inscrire',
+        style: TextStyle(
+          color: Theme.of(context).primaryColor,
+          fontSize: 16,
         ),
       ),
     );

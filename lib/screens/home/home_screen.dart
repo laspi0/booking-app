@@ -1,13 +1,16 @@
-// screens/home/home_screen.dart
 import 'package:flutter/material.dart';
 import '../../widgets/custom_nav_bar.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/messages_tab.dart';
 import 'tabs/favorites_tab.dart';
 import 'tabs/profile_tab.dart';
+import '../../models/user.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+   final User user;
+
+  const HomeScreen({Key? key, required this.user}) : super(key: key);
+
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -16,12 +19,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeTab(),
-    const MessagesTab(),
-    const FavoritesTab(),
-    const ProfileTab(),
-  ];
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      HomeTab(user: widget.user),
+      MessagesTab(user: widget.user),
+      FavoritesTab(user: widget.user),
+      ProfileTab(user: widget.user),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

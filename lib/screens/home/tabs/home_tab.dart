@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:register/screens/add_page.dart';
 import 'package:register/screens/detail_page.dart';
 import '../../../config/theme.dart';
+import '../../../models/user.dart';
 
 class HomeTab extends StatelessWidget {
-  const HomeTab({super.key});
+  final User user;
+  
+  const HomeTab({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {

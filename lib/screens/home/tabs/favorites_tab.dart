@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../config/theme.dart';
+import '../../../models/user.dart';
 
 class FavoritesTab  extends StatelessWidget {
-  const FavoritesTab ({super.key});
+   final User user;
+  
+  const FavoritesTab({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {

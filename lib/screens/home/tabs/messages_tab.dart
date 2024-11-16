@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
-class MessagesTab extends StatelessWidget {
-  const MessagesTab({super.key});
+import '../../../models/user.dart';
 
+class MessagesTab extends StatelessWidget {
+ final User user;
+  
+  const MessagesTab({super.key, required this.user});
   final List<Map<String, String>> users = const [
     {"name": "Moussa Diallo", "property": "Appartement à Médina"},
     {"name": "Fatou Ndiaye", "property": "Villa à Almadies"}, 

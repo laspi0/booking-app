@@ -1,53 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/user.dart';
+import 'token_service.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://192.168.1.5:8000/api';
+  static const String baseUrl = 'http://192.168.1.11:8000/api';
 
-  Future<Map<String, dynamic>> register({
-    required String name,
-    required String email,
-    required String password,
-    String? number,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/register'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'name': name,
-          'email': email,
-          'password': password,
-          'number': number,
-        }),
-      ).timeout(const Duration(seconds: 10));
-
-      final responseData = jsonDecode(response.body);
-      
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return {
-          'success': true,
-          'message': 'Inscription réussie!',
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': responseData['message'] ?? 'Une erreur est survenue',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Erreur de connexion: $e',
-      };
-    }
-  }
-// 
-  // Ajouter cette méthode dans votre AuthService existant
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -66,24 +24,112 @@ class AuthService {
       ).timeout(const Duration(seconds: 10));
 
       final responseData = jsonDecode(response.body);
-      
+
+      print('Response Data: $responseData'); // Debugging line
+
       if (response.statusCode == 200) {
+        if (responseData['user'] == null || responseData['access_token'] == null) {
+          return {
+            'success': false,
+            'message': 'Response missing user or token information',
+          };
+        }
+
+        final user = User.fromJson(responseData);
+
+        await TokenService.saveToken(user.token ?? '');
+
         return {
           'success': true,
           'message': 'Connexion réussie!',
-          'data': responseData,
+          'user': responseData, // Pass the entire responseData
+        };
+      } else if (response.statusCode == 401) {
+        return {
+          'success': false,
+          'message': 'Email ou mot de passe incorrect',
         };
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Identifiants incorrects',
+          'message': responseData['message'] ?? 'Une erreur est survenue',
         };
       }
     } catch (e) {
+      print('Login Error: $e'); // Debugging line
       return {
         'success': false,
         'message': 'Erreur de connexion: $e',
       };
+    }
+  }
+
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    String? number,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+          if (number != null) 'number': number,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      final responseData = jsonDecode(response.body);
+
+      print('Register Response Data: $responseData'); // Debugging line
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final user = responseData;
+        await TokenService.saveToken(user['token'] ?? '');
+
+        return {
+          'success': true,
+          'message': 'Inscription réussie!',
+          'user': user,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Une erreur est survenue',
+        };
+      }
+    } catch (e) {
+      print('Register Error: $e'); // Debugging line
+      return {
+        'success': false,
+        'message': 'Erreur de connexion: $e',
+      };
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      final token = await TokenService.getToken();
+      if (token != null) {
+        await http.post(
+          Uri.parse('$baseUrl/logout'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      }
+    } catch (e) {
+      // Handle logout error
+      print('Logout Error: $e'); // Debugging line
+    } finally {
+      await TokenService.removeToken();
     }
   }
 }

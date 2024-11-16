@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../config/theme.dart';
+import '../../../models/user.dart';
 
 class ProfileTab extends StatelessWidget {
-  const ProfileTab({Key? key}) : super(key: key);
+   final User user;
+  
+  const ProfileTab({super.key, required this.user});
 
   Widget _buildStat(String label, String value) {
     return Column(

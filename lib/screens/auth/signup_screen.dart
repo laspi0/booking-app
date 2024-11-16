@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../services/token_service.dart';
+import '../home/home_screen.dart';
 import 'login_screen.dart';
+
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -77,7 +80,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (result['success']) {
-        // Navigation vers la page de connexion ou d'accueil ici
+        // Récupération des données utilisateur depuis TokenService
+        final user = await TokenService.getUserData();
+
+        if (user != null) {
+          // Navigation vers l'écran principal après inscription
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(user: user), // HomeScreen personnalisé
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -205,7 +219,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 TextButton(
-                     onPressed: () {
+                  onPressed: () {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -226,7 +240,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     );
                   },
-                
                   child: Text(
                     'Déjà un compte ? Se connecter',
                     style: TextStyle(
