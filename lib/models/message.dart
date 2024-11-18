@@ -18,12 +18,12 @@ class Message {
     this.isRead = false,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json) {
+ factory Message.fromJson(Map<String, dynamic> json) {
   return Message(
     id: json['id'],
     conversationId: json['conversation_id'],
     userId: json['user_id'],
-    userName: json['user_id'].toString(), // Fallback to user_id as string if no name
+    userName: json['user_id'].toString(), // Utilisateur comme nom par défaut
     content: json['content'],
     createdAt: DateTime.parse(json['created_at']),
     isRead: json['is_read'] ?? false,

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'config/theme.dart';
-import 'screens/conversations_list_screen.dart'; // Add this import
+import 'models/conversation.dart';
+import 'screens/chat_screen.dart';
+import 'screens/conversations_list_screen.dart';
+// import 'screens/auth/signup_screen.dart';
 
 void main() {
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   MyApp({Key? key}) : super(key: key);
  
@@ -14,7 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: ConversationsListScreen(), // This should now work
+      home: ConversationsListScreen(),
     );
   }
 }

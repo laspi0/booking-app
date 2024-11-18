@@ -1,4 +1,5 @@
-// screens/chat_screen.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/conversation.dart';
@@ -20,11 +21,25 @@ class _ChatScreenState extends State<ChatScreen> {
   List<Message> _messages = [];
   bool _isLoading = true;
   String? _error;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchMessages();
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (mounted) {
+        _fetchMessages();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    _timer?.cancel(); // Cancel the timer in dispose
+    super.dispose();
   }
 
   Future<void> _fetchMessages() async {
@@ -32,16 +47,22 @@ class _ChatScreenState extends State<ChatScreen> {
       final messages =
           await ConversationService.getMessages(widget.conversation.id);
       await ConversationService.markAsRead(widget.conversation.id);
-      setState(() {
-        _messages = messages;
-        _isLoading = false;
-      });
-      _scrollToBottom();
+      if (mounted) {
+        // Check if the widget is still mounted before calling setState
+        setState(() {
+          _messages = messages;
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        // Check if the widget is still mounted before calling setState
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -57,33 +78,30 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
- Future<void> _sendMessage() async {
-  final content = _messageController.text.trim();
-  if (content.isEmpty) return;
+  Future<void> _sendMessage() async {
+    final content = _messageController.text.trim();
+    if (content.isEmpty) return;
 
-  _messageController.clear();
-  try {
-    print('Envoi du message: $content');
-    final newMessage = await ConversationService.sendMessage(
-      widget.conversation.id,
-      content,
-    );
-    print('Réponse reçue: $newMessage');
-    
-    setState(() {
-      print('Messages avant: ${_messages.length}');
-      _messages = List.from(_messages)..add(newMessage);
-      print('Messages après: ${_messages.length}');
-    });
-    _scrollToBottom();
-  } catch (e) {
-    print('Erreur détectée: $e');
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erreur lors de l\'envoi du message: $e')),
-    );
+    _messageController.clear();
+    try {
+      final newMessage = await ConversationService.sendMessage(
+          widget.conversation.id, content);
+      if (mounted) {
+        // Check if the widget is still mounted before calling setState
+        setState(() {
+          _messages.add(newMessage);
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        // Check if the widget is still mounted before calling setState
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de l\'envoi du message: $e')),
+        );
+      }
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -116,10 +134,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             child: Align(
-                              alignment:
-                                  message.userId == widget.conversation.recipientId
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
+                              alignment: message.userId ==
+                                      widget.conversation.recipientId
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
                               child: Container(
                                 constraints: BoxConstraints(
                                   maxWidth:
@@ -138,13 +156,24 @@ class _ChatScreenState extends State<ChatScreen> {
                                   children: [
                                     Text(message.content),
                                     SizedBox(height: 4),
-                                    Text(
-                                      DateFormat('HH:mm')
-                                          .format(message.createdAt),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[600],
-                                      ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          DateFormat('HH:mm')
+                                              .format(message.createdAt),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        message.isRead
+                                            ? Icon(Icons.check_circle,
+                                                size: 12, color: Colors.blue)
+                                            : Icon(Icons.check_circle_outline,
+                                                size: 12, color: Colors.grey),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -180,12 +209,5 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
 }

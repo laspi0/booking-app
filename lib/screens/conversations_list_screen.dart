@@ -1,4 +1,4 @@
-// screens/conversations_list_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/conversation.dart';
 import '../services/conversation_service.dart';
@@ -6,18 +6,25 @@ import 'chat_screen.dart';
 
 class ConversationsListScreen extends StatefulWidget {
   @override
-  _ConversationsListScreenState createState() => _ConversationsListScreenState();
+  _ConversationsListScreenState createState() =>
+      _ConversationsListScreenState();
 }
 
 class _ConversationsListScreenState extends State<ConversationsListScreen> {
   List<Conversation> _conversations = [];
   bool _isLoading = true;
   String? _error;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchConversations();
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (mounted) {
+        _fetchConversations();
+      }
+    });
   }
 
   Future<void> _fetchConversations() async {
@@ -36,6 +43,12 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Mes Conversations')),
@@ -50,16 +63,17 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
                     return ListTile(
                       title: Text(conversation.listingTitle),
                       subtitle: Text(
-                        conversation.unreadMessages > 0 
-                          ? '${conversation.unreadMessages} nouveaux messages' 
-                          : 'Pas de nouveaux messages'
+                        conversation.unreadMessages > 0
+                            ? '${conversation.unreadMessages} nouveaux messages'
+                            : 'Pas de nouveaux messages',
                       ),
                       trailing: Text(conversation.lastMessageAt.toString()),
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ChatScreen(conversation: conversation),
+                            builder: (context) =>
+                                ChatScreen(conversation: conversation),
                           ),
                         );
                       },
