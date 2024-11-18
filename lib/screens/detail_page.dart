@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:register/models/listing_model.dart';
 import '../../../config/theme.dart';
 
 class DetailPage extends StatelessWidget {
@@ -16,7 +17,7 @@ class DetailPage extends StatelessWidget {
     required this.location,
     required this.description,
     required this.features,
-    required this.images,
+    required this.images, required Listing listing,
   });
 
   @override

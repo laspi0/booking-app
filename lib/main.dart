@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'config/theme.dart';
-import 'screens/auth/signup_screen.dart';
+import 'screens/conversations_list_screen.dart'; // Add this import
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
+  MyApp({Key? key}) : super(key: key);
+ 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const SignUpScreen(),
+      home: ConversationsListScreen(), // This should now work
     );
   }
 }

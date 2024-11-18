@@ -75,7 +75,8 @@ class _HomeTabState extends State<HomeTab> {
     final formatter = NumberFormat("#,##0.00", "fr_FR");
     return formatter.format(price);
   }
-Widget _buildListingImage(String? imageUrl) {
+
+  Widget _buildListingImage(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
       return Container(
         width: 120,
@@ -105,12 +106,9 @@ Widget _buildListingImage(String? imageUrl) {
       );
     }
 
-    // Remove '/api' from the URL construction since it's already in AppConfig.baseUrl
-    // Also, ensure we're using the correct path to access Laravel's storage
     final baseUrlWithoutApi = AppConfig.baseUrl.replaceAll('/api', '');
     final fullImageUrl = '$baseUrlWithoutApi/storage/$imageUrl';
-    
-    // Add debug print to verify the URL
+
     debugPrint('Loading image from: $fullImageUrl');
 
     return Container(
@@ -166,7 +164,7 @@ Widget _buildListingImage(String? imageUrl) {
         ),
       ),
     );
-}
+  }
 
   Widget _buildListingCard(Listing listing) {
     return Card(
@@ -178,6 +176,7 @@ Widget _buildListingImage(String? imageUrl) {
       child: InkWell(
         onTap: () {
           // Navigation vers le détail
+          // Navigator.push(context, MaterialPageRoute(builder: (context) => ListingDetailPage(listing: listing)));
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
