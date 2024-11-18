@@ -27,7 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _fetchMessages();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
       if (mounted) {
         _fetchMessages();
       }
@@ -42,29 +42,38 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchMessages() async {
-    try {
-      final messages =
-          await ConversationService.getMessages(widget.conversation.id);
-      await ConversationService.markAsRead(widget.conversation.id);
-      if (mounted) {
-        // Check if the widget is still mounted before calling setState
+Future<void> _fetchMessages() async {
+  try {
+    final messages =
+        await ConversationService.getMessages(widget.conversation.id);
+    await ConversationService.markAsRead(widget.conversation.id);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Vérifiez si de nouveaux messages ont été ajoutés
+      if (messages.length > _messages.length) {
         setState(() {
           _messages = messages;
-          _isLoading = false;
         });
-        _scrollToBottom();
-      }
-    } catch (e) {
-      if (mounted) {
-        // Check if the widget is still mounted before calling setState
+        _scrollToBottom(); // Scroller uniquement si de nouveaux messages existent
+      } else {
         setState(() {
-          _error = e.toString();
-          _isLoading = false;
+          _messages = messages;
         });
       }
     }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
   }
+}
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {

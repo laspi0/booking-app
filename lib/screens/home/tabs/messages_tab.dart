@@ -1,28 +1,56 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-
+import '../../../models/conversation.dart';
 import '../../../models/user.dart';
+import '../../../services/conversation_service.dart';
+import '../../chat_screen.dart';
 
-class MessagesTab extends StatelessWidget {
- final User user;
-  
+class MessagesTab extends StatefulWidget {
+  final User user;
+
   const MessagesTab({super.key, required this.user});
-  final List<Map<String, String>> users = const [
-    {"name": "Moussa Diallo", "property": "Appartement à Médina"},
-    {"name": "Fatou Ndiaye", "property": "Villa à Almadies"}, 
-    {"name": "Abdoulaye Sow", "property": "Studio à Sacré-Coeur"},
-    {"name": "Aïda Sarr", "property": "Appartement à Ouakam"},
-    {"name": "Mamadou Kane", "property": "Villa à Point E"},
-    {"name": "Aminata Fall", "property": "Appartement à Mermoz"},
-    {"name": "Ibrahima Diop", "property": "Studio à Yoff"},
-    {"name": "Sokhna Mbaye", "property": "Appartement à Fann"},
-    {"name": "Cheikh Gueye", "property": "Villa à Ngor"},
-    {"name": "Mariama Ba", "property": "Studio à Liberté 6"},
-    {"name": "Omar Cissé", "property": "Appartement à Grand Dakar"},
-    {"name": "Rama Seck", "property": "Villa à Mamelles"},
-    {"name": "Modou Faye", "property": "Studio à HLM"},
-    {"name": "Khady Diouf", "property": "Appartement à Plateau"},
-    {"name": "Pape Ly", "property": "Villa à Amitié"}
-  ];
+
+  @override
+  _MessagesTabState createState() => _MessagesTabState();
+}
+
+class _MessagesTabState extends State<MessagesTab> {
+  List<Conversation> _conversations = [];
+  bool _isLoading = true;
+  String? _error;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchConversations();
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) {
+        _fetchConversations();
+      }
+    });
+  }
+
+  Future<void> _fetchConversations() async {
+    try {
+      final conversations = await ConversationService.getConversations();
+      setState(() {
+        _conversations = conversations;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,125 +80,111 @@ class MessagesTab extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.filter_list, color: Colors.black),
-                onPressed: () {},
-              ),
-            ],
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: users.length,
-        itemBuilder: (context, index) {
-          bool isNewMessage = index < 3;
-          bool isPremium = index == 4 || index == 8;
-          int unreadCount = index == 0 ? 3 : (index == 1 ? 2 : 1);
-          
-          return Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundImage: NetworkImage(
-                      'https://picsum.photos/seed/${index + 50}/200',
-                    ),
-                  ),
-                ],
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      users[index]["name"]!,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  if (isPremium)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      margin: const EdgeInsets.only(left: 8),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text('Erreur: $_error'))
+              : ListView.builder(
+                  itemCount: _conversations.length,
+                  itemBuilder: (context, index) {
+                    final conversation = _conversations[index];
+                    final bool isNewMessage = conversation.unreadMessages > 0;
+
+                    return Container(
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.verified, color: Colors.amber, size: 14),
-                          SizedBox(width: 2),
-                          Text(
-                            'VÉRIFIÉ',
-                            style: TextStyle(
-                              color: Colors.amber,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey.withOpacity(0.1),
+                            width: 1,
                           ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-              subtitle: Text(
-                users[index]["property"]!,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    index < 3 ? 'Aujourd\'hui' : 'Hier',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
-                  ),
-                  if (isNewMessage)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '$unreadCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
                         ),
                       ),
-                    ),
-                ],
-              ),
-              onTap: () {
-                // Navigation vers la conversation
-              },
-            ),
-          );
-        },
-      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          radius: 28,
+                          backgroundImage: NetworkImage(
+                            'https://picsum.photos/seed/${index + 50}/200',
+                          ),
+                        ),
+                        title: Text(
+                          conversation.senderName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        subtitle: Text(
+                          conversation.listingTitle,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _formatDate(conversation.lastMessageAt),
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (isNewMessage)
+                              Container(
+                                margin: const EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${conversation.unreadMessages}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ChatScreen(conversation: conversation),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    if (date.day == now.day &&
+        date.month == now.month &&
+        date.year == now.year) {
+      return "Aujourd'hui";
+    } else if (date.day == now.day - 1 &&
+        date.month == now.month &&
+        date.year == now.year) {
+      return "Hier";
+    } else {
+      return "${date.day}/${date.month}/${date.year}";
+    }
   }
 }
