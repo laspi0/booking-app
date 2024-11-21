@@ -3,10 +3,19 @@ import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../models/user.dart';
 
-class FavoritesTab  extends StatelessWidget {
-   final User user;
+class FavoritesTab extends StatelessWidget {
+  final User user;
   
   const FavoritesTab({super.key, required this.user});
+
+  final List<String> apartmentImages = const [
+    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267',
+    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2',
+    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
+    'https://images.unsplash.com/photo-1554995207-c18c203602cb',
+    'https://images.unsplash.com/photo-1536376072261-38c75010e6c9',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +85,7 @@ class FavoritesTab  extends StatelessWidget {
                     height: 100,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: NetworkImage('https://picsum.photos/seed/${index + 20}/240/240'),
+                        image: NetworkImage(apartmentImages[index]),
                         fit: BoxFit.cover,
                       ),
                     ),

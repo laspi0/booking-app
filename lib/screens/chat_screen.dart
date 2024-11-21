@@ -42,38 +42,38 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-Future<void> _fetchMessages() async {
-  try {
-    final messages =
-        await ConversationService.getMessages(widget.conversation.id);
-    await ConversationService.markAsRead(widget.conversation.id);
+  Future<void> _fetchMessages() async {
+    try {
+      final messages =
+          await ConversationService.getMessages(widget.conversation.id);
+      await ConversationService.markAsRead(widget.conversation.id);
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Vérifiez si de nouveaux messages ont été ajoutés
-      if (messages.length > _messages.length) {
+      if (mounted) {
         setState(() {
-          _messages = messages;
+          _isLoading = false;
         });
-        _scrollToBottom(); // Scroller uniquement si de nouveaux messages existent
-      } else {
+
+        // Vérifiez si de nouveaux messages ont été ajoutés
+        if (messages.length > _messages.length) {
+          setState(() {
+            _messages = messages;
+          });
+          _scrollToBottom(); // Scroller uniquement si de nouveaux messages existent
+        } else {
+          setState(() {
+            _messages = messages;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _messages = messages;
+          _error = e.toString();
+          _isLoading = false;
         });
       }
     }
-  } catch (e) {
-    if (mounted) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
   }
-}
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -139,49 +139,45 @@ Future<void> _fetchMessages() async {
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final message = _messages[index];
+                          final isMe = message.userId == widget.conversation.recipientId;
                           return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             child: Align(
-                              alignment: message.userId ==
-                                      widget.conversation.recipientId
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
+                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                               child: Container(
                                 constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(context).size.width * 0.7,
+                                  maxWidth: MediaQuery.of(context).size.width * 0.75,
                                 ),
                                 padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: message.userId ==
-                                          widget.conversation.senderId
-                                      ? Colors.blue[100]
-                                      : Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: isMe ? Colors.blue : Colors.grey[300],
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(12),
+                                    topRight: Radius.circular(12),
+                                    bottomLeft: isMe ? Radius.circular(12) : Radius.circular(0),
+                                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(12),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(message.content),
+                                    Text(
+                                      message.content,
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : Colors.black,
+                                      ),
+                                    ),
                                     SizedBox(height: 4),
                                     Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          DateFormat('HH:mm')
-                                              .format(message.createdAt),
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey[600],
-                                          ),
+                                          DateFormat('HH:mm').format(message.createdAt),
+                                          style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey[600]),
                                         ),
                                         message.isRead
-                                            ? Icon(Icons.check_circle,
-                                                size: 12, color: Colors.blue)
-                                            : Icon(Icons.check_circle_outline,
-                                                size: 12, color: Colors.grey),
+                                            ? Icon(Icons.check_circle, size: 12, color: isMe ? Colors.white70 : Colors.blue)
+                                            : Icon(Icons.check_circle_outline, size: 12, color: Colors.grey),
                                       ],
                                     ),
                                   ],
@@ -209,7 +205,7 @@ Future<void> _fetchMessages() async {
                 ),
                 SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: Icon(Icons.send, color: Colors.blue),
                   onPressed: _sendMessage,
                 ),
               ],

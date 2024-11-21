@@ -213,6 +213,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             'S\'inscrire',
                             style: TextStyle(
                               fontSize: 18,
+                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

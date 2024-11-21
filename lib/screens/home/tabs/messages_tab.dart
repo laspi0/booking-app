@@ -25,7 +25,7 @@ class _MessagesTabState extends State<MessagesTab> {
     super.initState();
     _fetchConversations();
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (mounted) {
+      if (mounted) { // Vérification de "mounted" avant de tenter de mettre à jour l'état
         _fetchConversations();
       }
     });
@@ -34,21 +34,25 @@ class _MessagesTabState extends State<MessagesTab> {
   Future<void> _fetchConversations() async {
     try {
       final conversations = await ConversationService.getConversations();
-      setState(() {
-        _conversations = conversations;
-        _isLoading = false;
-      });
+      if (mounted) { // Vérification si le widget est encore monté
+        setState(() {
+          _conversations = conversations;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) { // Vérification si le widget est encore monté
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer?.cancel(); // Annuler le timer lorsque le widget est supprimé
     super.dispose();
   }
 

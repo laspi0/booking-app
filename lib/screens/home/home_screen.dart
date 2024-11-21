@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:register/screens/home/tabs/home_tab.dart';
+import 'package:register/screens/home/tabs/messages_tab.dart';
 import '../../widgets/custom_nav_bar.dart';
-import 'tabs/home_tab.dart';
-import 'tabs/messages_tab.dart';
 import 'tabs/favorites_tab.dart';
 import 'tabs/profile_tab.dart';
 import '../../models/user.dart';

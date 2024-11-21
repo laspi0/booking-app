@@ -1,444 +1,313 @@
 import 'package:flutter/material.dart';
-import '../../../config/app_config.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../config/theme.dart';
+import '../../../controllers/home_tab_controller.dart';
 import '../../../models/listing_model.dart';
 import '../../../models/user.dart';
-import '../../../services/listing_service.dart';
-import '../../../config/theme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
 
 class HomeTab extends StatefulWidget {
   final User user;
-  const HomeTab({Key? key, required this.user}) : super(key: key);
+  
+  const HomeTab({super.key, required this.user});
 
   @override
   State<HomeTab> createState() => _HomeTabState();
 }
 
 class _HomeTabState extends State<HomeTab> {
-  final ListingService _listingService = ListingService();
-  final ScrollController _scrollController = ScrollController();
-  List<Listing> _listings = [];
-  bool _isLoading = true;
-  String? _error;
-  bool _isRefreshing = false;
+  final HomeTabController _controller = HomeTabController();
 
   @override
   void initState() {
     super.initState();
-    _fetchListings();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchListings() async {
-    if (_isRefreshing) return;
-
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final listings = await _listingService.getListings();
-
-      if (mounted) {
-        setState(() {
-          _listings = listings;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString().contains('Exception:')
-              ? e.toString().split('Exception: ')[1]
-              : 'Une erreur est survenue lors du chargement des annonces.';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _handleRefresh() async {
-    setState(() => _isRefreshing = true);
-    await _fetchListings();
-    setState(() => _isRefreshing = false);
-    return Future.value();
-  }
-
-  String _formatPrice(double price) {
-    final formatter = NumberFormat("#,##0.00", "fr_FR");
-    return formatter.format(price);
+    _controller.fetchListings(setState);
   }
 
   Widget _buildListingImage(String? imageUrl) {
-    if (imageUrl == null || imageUrl.isEmpty) {
+    final fullImageUrl = _controller.getFullImageUrl(imageUrl);
+
+    if (fullImageUrl.isEmpty) {
       return Container(
-        width: 120,
-        height: 140,
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.image_not_supported,
-              color: Colors.grey,
-              size: 36,
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Pas d\'image',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
-          ],
+        height: 200,
+        color: Colors.grey[200],
+        child: const Center(
+          child: Icon(Icons.image_not_supported, color: Colors.grey),
         ),
       );
     }
 
-    final baseUrlWithoutApi = AppConfig.baseUrl.replaceAll('/api', '');
-    final fullImageUrl = '$baseUrlWithoutApi/storage/$imageUrl';
-
-    debugPrint('Loading image from: $fullImageUrl');
-
-    return Container(
-      width: 120,
-      height: 140,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: CachedNetworkImage(
-          imageUrl: fullImageUrl,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
-            ),
-          ),
-          errorWidget: (context, url, error) {
-            debugPrint('Error loading image: $error for URL: $url');
-            return Container(
-              color: Colors.grey[200],
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.grey,
-                    size: 36,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Erreur',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+    return CachedNetworkImage(
+      imageUrl: fullImageUrl,
+      height: 200,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Container(
+        height: 200,
+        color: Colors.grey[200],
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-    );
-  }
-
-  Widget _buildListingCard(Listing listing) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: InkWell(
-        onTap: () {
-          // Navigation vers le détail
-          // Navigator.push(context, MaterialPageRoute(builder: (context) => ListingDetailPage(listing: listing)));
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildListingImage(
-                  listing.photos.isNotEmpty ? listing.photos[0] : null),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      listing.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${_formatPrice(listing.price)} €/mois',
-                            style: TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        if (listing.measurement.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${listing.measurement} m²',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            listing.address,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.home_outlined,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          listing.type,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+      errorWidget: (context, url, error) {
+        debugPrint('Error loading image: $error for URL: $url');
+        return Container(
+          height: 200,
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(Icons.error_outline, color: Colors.grey),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildErrorState() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[300],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[300], size: 64),
+          const SizedBox(height: 16),
+          Text(
+            _controller.error ?? 'Une erreur est survenue',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => _controller.fetchListings(setState),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            const SizedBox(height: 16),
-            Text(
-              _error ?? 'Une erreur est survenue',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _fetchListings,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
+            child: const Text('Réessayer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String text, {bool isSelected = false}) {
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isSelected ? AppTheme.primaryColor : Colors.grey,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 16,
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.home_work_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Aucune annonce disponible',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Les nouvelles annonces apparaîtront ici',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _handleRefresh,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Actualiser'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildFeature(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.grey),
+        const SizedBox(width: 4),
+        Text(text, style: const TextStyle(color: Colors.grey)),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Mes annonces',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'Bonjour ${widget.user.name}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-              ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: _controller.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _controller.error != null
+                ? _buildErrorState()
+                : Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.white,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(right: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.search, color: Colors.grey[600], size: 20),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Rechercher un logement',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add),
+                                  color: AppTheme.primaryColor,
+                                  onPressed: () => _controller.navigateToAddPage(context),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  ..._controller.types.map((type) => _buildTab(
+                                        type,
+                                        isSelected: type == 'Récent',
+                                      )),
+                                  ..._controller.quartiers.map((quartier) => _buildTab(quartier)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          color: Colors.grey[50],
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _controller.listings.length,
+                            itemBuilder: (context, index) {
+                              final listing = _controller.listings[index];
+                              return _buildListingCard(listing, index);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildListingCard(Listing listing, int index) {
+    return GestureDetector(
+      onTap: () {
+        // TODO: Implement navigation to listing details
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        backgroundColor: AppTheme.primaryColor,
-        actions: [
-          if (!_isLoading)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _handleRefresh,
-              tooltip: 'Actualiser',
-            ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildErrorState()
-              : _listings.isEmpty
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: _handleRefresh,
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        itemCount: _listings.length,
-                        itemBuilder: (context, index) {
-                          return _buildListingCard(_listings[index]);
-                        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    _buildListingImage(
+                      listing.photos.isNotEmpty ? listing.photos[0] : null
+                    ),
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${listing.price.toStringAsFixed(0)} FCFA',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              listing.title,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.favorite_border),
+                            onPressed: () {},
+                            color: AppTheme.primaryColor,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: Colors.grey, size: 16),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              listing.address,
+                              style: const TextStyle(color: Colors.grey),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _buildFeature(Icons.square_foot,
+                              '${listing.measurement} m²'),
+                          const SizedBox(width: 24),
+                          _buildFeature(
+                              Icons.bed, '${index + 2} chambres'),
+                          const SizedBox(width: 24),
+                          _buildFeature(
+                              Icons.bathroom, '${index + 1} sdb'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

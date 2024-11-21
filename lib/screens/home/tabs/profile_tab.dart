@@ -190,7 +190,7 @@ class ProfileTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 25),
                     const Text(
-                      'John Doe',
+                      'Lassana Diarra',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
