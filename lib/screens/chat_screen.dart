@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
 import '../services/conversation_service.dart';
@@ -112,107 +111,153 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.conversation.listingTitle),
-            Text(
-              'Conversation avec ${widget.conversation.senderName}',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+        onPressed: () => Navigator.pop(context),
       ),
-      body: Column(
+      titleSpacing: 0,
+      title: Row(
         children: [
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? Center(child: Text('Erreur: $_error'))
-                    : ListView.builder(
-                        controller: _scrollController,
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          final isMe = message.userId == widget.conversation.recipientId;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Align(
-                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                              child: Container(
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.of(context).size.width * 0.75,
-                                ),
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isMe ? Colors.blue : Colors.grey[300],
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(12),
-                                    topRight: Radius.circular(12),
-                                    bottomLeft: isMe ? Radius.circular(12) : Radius.circular(0),
-                                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(12),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      message.content,
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : Colors.black,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          DateFormat('HH:mm').format(message.createdAt),
-                                          style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey[600]),
-                                        ),
-                                        message.isRead
-                                            ? Icon(Icons.check_circle, size: 12, color: isMe ? Colors.white70 : Colors.blue)
-                                            : Icon(Icons.check_circle_outline, size: 12, color: Colors.grey),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: Colors.grey[300],
+            child: Text(
+              widget.conversation.senderName[0].toUpperCase(),
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+          SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.conversation.senderName,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Actif aujourd\'hui',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.phone, color: Colors.black),
+          onPressed: () {},
+        ),
+      ],
+    ),
+    body: Column(
+      children: [
+        Expanded(
+          child: _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(child: Text('Erreur: $_error'))
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
+                        final isMe = message.userId == widget.conversation.recipientId;
+
+                        return Align(
+                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            margin: EdgeInsets.only(
+                              bottom: 8,
+                              left: isMe ? 50 : 0,
+                              right: isMe ? 0 : 50,
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isMe ? Theme.of(context).primaryColor: Color(0xFFE4E6EB),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              message.content,
+                              style: TextStyle(
+                                color: isMe ? Colors.white : Colors.black,
+                                fontSize: 15,
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              top: BorderSide(color: Colors.grey.shade200),
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          child: SafeArea(
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Écrire un message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: 'Saisissez un message...',
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        border: InputBorder.none,
                       ),
                     ),
                   ),
                 ),
                 SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.send, color: Colors.blue),
-                  onPressed: _sendMessage,
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_upward,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
+        ),
+      ],
+    ),
+  );
+}}
