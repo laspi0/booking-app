@@ -9,6 +9,7 @@ class Listing {
   final String address;
   final String status;
   final List<String> photos;
+   bool isFavorited;
 
   Listing({
     required this.id,
@@ -20,6 +21,8 @@ class Listing {
     required this.address,
     required this.status,
     required this.photos,
+    this.isFavorited = false,
+
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -33,6 +36,8 @@ class Listing {
       address: json['address'],
       status: json['status'],
       photos: (json['photos'] as List).map((photo) => photo['path'] as String).toList(),
+      isFavorited: json['is_favorited'] ?? false,
+
     );
   }
 }

@@ -314,7 +314,7 @@ class _AddPageState extends State<AddPage> {
                       const SizedBox(height: 25),
                       const Text(
                         'Informations principales',
-                        style: TextStyle(
+                        style: TextStyle(/*  */
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
