@@ -16,11 +16,17 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   final HomeTabController _controller = HomeTabController();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
     super.initState();
     _controller.fetchListings(setState);
+  }
+
+  // Méthode de rafraîchissement
+  Future<void> _refreshListings() async {
+    await _controller.fetchListings(setState);
   }
 
   Widget _buildListingImage(String? imageUrl) {
@@ -111,9 +117,6 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _buildListingCard(Listing listing, int index) {
-    bool isFavorited =
-        false; // Mettre à jour en fonction de l'état réel des favoris
-
     return GestureDetector(
       onTap: () {
         // TODO: Implement navigation to listing details
@@ -141,13 +144,15 @@ class _HomeTabState extends State<HomeTab> {
                 Stack(
                   children: [
                     _buildListingImage(
-                        listing.photos.isNotEmpty ? listing.photos[0] : null),
+                      listing.photos.isNotEmpty ? listing.photos[0] : null,
+                    ),
                     Positioned(
                       top: 10,
                       right: 10,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                          horizontal: 12, vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor,
                           borderRadius: BorderRadius.circular(20),
@@ -184,17 +189,12 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                           IconButton(
                             icon: Icon(
-                              listing.isFavorited // Change this line
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
+                              listing.isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
                               color: AppTheme.primaryColor,
                             ),
                             onPressed: () {
-                              setState(() {
-                                isFavorited = !isFavorited;
-                              });
-                              print(
-                                  'Attempting to toggle favorite for listing ID: ${listing.id}');
                               _controller.toggleFavorite(listing.id, setState);
                             },
                           ),
@@ -202,9 +202,11 @@ class _HomeTabState extends State<HomeTab> {
                       ),
                       const SizedBox(height: 8),
                       Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              color: Colors.grey, size: 16),
+                                                children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.grey, size: 16,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -219,12 +221,17 @@ class _HomeTabState extends State<HomeTab> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
+                          _buildFeature(Icons.square_foot,
+                            '${listing.measurement} m²',
+                          ),
+                          const SizedBox(width: 24),
                           _buildFeature(
-                              Icons.square_foot, '${listing.measurement} m²'),
+                            Icons.bed, '${index + 2} chambres',
+                          ),
                           const SizedBox(width: 24),
-                          _buildFeature(Icons.bed, '${index + 2} chambres'),
-                          const SizedBox(width: 24),
-                          _buildFeature(Icons.bathroom, '${index + 1} sdb'),
+                          _buildFeature(
+                            Icons.bathroom, '${index + 1} sdb',
+                          ),
                         ],
                       ),
                     ],
@@ -244,84 +251,93 @@ class _HomeTabState extends State<HomeTab> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: _controller.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _controller.error != null
-                ? _buildErrorState()
-                : Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        color: Colors.white,
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    margin: const EdgeInsets.only(right: 12),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200],
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.search,
-                                            color: Colors.grey[600], size: 20),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Rechercher un logement',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 16,
-                                          ),
+          ? const Center(child: CircularProgressIndicator())
+          : _controller.error != null
+            ? _buildErrorState()
+            : RefreshIndicator(
+                key: _refreshIndicatorKey,
+                onRefresh: _refreshListings,
+                color: AppTheme.primaryColor,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.search,
+                                        color: Colors.grey[600], size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Rechercher un logement',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 16,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.add),
-                                  color: AppTheme.primaryColor,
-                                  onPressed: () =>
-                                      _controller.navigateToAddPage(context),
-                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add),
+                                color: AppTheme.primaryColor,
+                                onPressed: () =>
+                                  _controller.navigateToAddPage(context),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                ..._controller.types.map((type) => _buildTab(
+                                  type,
+                                  isSelected: type == 'Récent',
+                                )),
+                                ..._controller.quartiers
+                                  .map((quartier) => _buildTab(quartier)),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  ..._controller.types.map((type) => _buildTab(
-                                        type,
-                                        isSelected: type == 'Récent',
-                                      )),
-                                  ..._controller.quartiers
-                                      .map((quartier) => _buildTab(quartier)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          color: Colors.grey[50],
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _controller.listings.length,
-                            itemBuilder: (context, index) {
-                              final listing = _controller.listings[index];
-                              return _buildListingCard(listing, index);
-                            },
                           ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        color: Colors.grey[50],
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _controller.listings.length,
+                          itemBuilder: (context, index) {
+                            final listing = _controller.listings[index];
+                            return _buildListingCard(listing, index);
+                          },
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }

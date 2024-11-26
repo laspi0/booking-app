@@ -29,18 +29,19 @@ class HomeTabController {
 
   final List<String> types = ['Récent', 'Populaire', 'Meilleures offres'];
 
-  // Méthodes
   Future<void> fetchListings(Function setState) async {
     try {
       setState(() {
         isLoading = true;
         error = null;
       });
-
       final fetchedListings = await _listingService.getListings();
-
+      final favoriteListingIds = await FavoriteService.getFavoriteListings();
       setState(() {
-        listings = fetchedListings;
+        listings = fetchedListings.map((listing) {
+          listing.isFavorited = favoriteListingIds.contains(listing.id);
+          return listing;
+        }).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -51,49 +52,32 @@ class HomeTabController {
     }
   }
 
- Future<void> toggleFavorite(int listingId, Function setState) async {
-  try {
-    // Trouvez l'index du listing dans la liste
-    final listingIndex = listings.indexWhere((l) => l.id == listingId);
-    if (listingIndex == -1) return;
-
-    final listing = listings[listingIndex];
-    final newFavoritedState = !listing.isFavorited;
-
-    bool success;
-    if (newFavoritedState) {
-      success = await FavoriteService.addFavorite(listingId);
-    } else {
-      success = await FavoriteService.removeFavorite(listingId);
+  Future<void> toggleFavorite(int listingId, Function setState) async {
+    try {
+      final listingIndex = listings.indexWhere((l) => l.id == listingId);
+      if (listingIndex == -1) return;
+      final listing = listings[listingIndex];
+      final newFavoritedState = !listing.isFavorited;
+      bool success;
+      if (newFavoritedState) {
+        success = await FavoriteService.addFavorite(listingId);
+      } else {
+        success = await FavoriteService.removeFavorite(listingId);
+      }
+      if (success) {
+        setState(() {
+          listings[listingIndex].isFavorited = newFavoritedState;
+        });
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de la mise à jour des favoris: $e');
     }
-
-    if (success) {
-      setState(() {
-        // Mettre à jour TOUS les listings avec le même ID
-        listings = listings.map((l) {
-          if (l.id == listingId) {
-            l.isFavorited = newFavoritedState;
-          }
-          return l;
-        }).toList();
-      });
-    } else {
-      // Gérer l'échec de la mise à jour
-      debugPrint('Échec de la mise à jour du favori');
-    }
-  } catch (e) {
-    debugPrint('Erreur lors de la mise à jour des favoris: $e');
   }
-}
-
-  
 
   String getFullImageUrl(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) return '';
-
     final baseUrlWithoutApi = AppConfig.baseUrl.replaceAll('/api', '');
     final fullImageUrl = '$baseUrlWithoutApi/storage/$imageUrl';
-
     debugPrint('Loading image from: $fullImageUrl');
     return fullImageUrl;
   }
@@ -105,5 +89,14 @@ class HomeTabController {
         builder: (context) => const AddPage(),
       ),
     );
+
+    void navigateToAddPage(BuildContext context) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AddPage(),
+        ),
+      );
+    }
   }
 }
