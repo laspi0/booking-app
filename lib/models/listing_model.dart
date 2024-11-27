@@ -1,4 +1,6 @@
 // lib/models/listing.dart
+import '../config/app_config.dart';
+
 class Listing {
   final int id;
   final String title;
@@ -40,4 +42,5 @@ class Listing {
 
     );
   }
+
 }

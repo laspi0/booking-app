@@ -197,7 +197,7 @@ class _HomeTabState extends State<HomeTab> {
   Widget _buildListingCard(Listing listing, int index) {
     return GestureDetector(
       onTap: () {
-        // TODO: Implement navigation to listing details
+        
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),

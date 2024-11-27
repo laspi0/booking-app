@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:register/screens/detail_page.dart';
 import '../../../config/theme.dart';
 import '../../../controllers/home_tab_controller.dart';
 import '../../../models/listing_model.dart';
@@ -119,8 +120,13 @@ class _HomeTabState extends State<HomeTab> {
   Widget _buildListingCard(Listing listing, int index) {
     return GestureDetector(
       onTap: () {
-        // TODO: Implement navigation to listing details
-      },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ListingDetailPage(listing: listing),
+    ),
+  );
+},
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
