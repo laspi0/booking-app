@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import '../../../config/theme.dart';
+import 'dart:convert';
+
 import '../../../config/app_config.dart';
+import '../../../config/theme.dart';
 import '../../../models/listing_model.dart';
+import '../../../models/user.dart';
 
 class ListingDetailPage extends StatefulWidget {
   final Listing listing;
+  final User user;
 
-  const ListingDetailPage({super.key, required this.listing});
+  const ListingDetailPage({super.key, required this.listing, required this.user});
 
   @override
   State<ListingDetailPage> createState() => _ListingDetailPageState();
@@ -15,6 +20,7 @@ class ListingDetailPage extends StatefulWidget {
 
 class _ListingDetailPageState extends State<ListingDetailPage> {
   late PageController _pageController;
+  final TextEditingController _commentController = TextEditingController();
 
   @override
   void initState() {
@@ -25,6 +31,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   @override
   void dispose() {
     _pageController.dispose();
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -38,6 +45,46 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     debugPrint('Image Path: $relativePath');
     debugPrint('Full Image URL: $fullImageUrl');
     return fullImageUrl;
+  }
+
+  Future<void> _postComment() async {
+    if (_commentController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Le commentaire ne peut pas être vide'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse('${AppConfig.baseUrl}/listings/${widget.listing.id}/comments'),
+      headers: {
+        'Authorization': 'Bearer ${widget.user.token}', // Assurez-vous d'avoir un token
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'content': _commentController.text,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Commentaire ajouté avec succès'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _commentController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Échec de l\'ajout du commentaire'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildImageCarousel() {
@@ -250,6 +297,30 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                         height: 1.5,
                         color: Colors.black87,
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSection(
+                    'Ajouter un commentaire',
+                    Column(
+                      children: [
+                        TextField(
+                          controller: _commentController,
+                          decoration: const InputDecoration(
+                            hintText: 'Écrire un commentaire...',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _postComment,
+                          child: const Text('Publier'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 100),
