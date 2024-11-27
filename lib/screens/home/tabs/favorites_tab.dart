@@ -1,175 +1,233 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+import 'package:register/models/user.dart';
+
+import '../../../config/app_config.dart';
 import '../../../config/theme.dart';
-import '../../../models/user.dart';
 
-class FavoritesTab extends StatelessWidget {
+class FavoritesTab extends StatefulWidget {
   final User user;
   
   const FavoritesTab({super.key, required this.user});
 
-  final List<String> apartmentImages = const [
-    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267',
-    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2',
-    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
-    'https://images.unsplash.com/photo-1554995207-c18c203602cb',
-    'https://images.unsplash.com/photo-1536376072261-38c75010e6c9',
-  ];
+  @override
+  _FavoritesTabState createState() => _FavoritesTabState();
+}
+
+class _FavoritesTabState extends State<FavoritesTab> {
+  List<dynamic> favorites = [];
+  bool isLoading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchFavorites();
+  }
+
+  Future<void> fetchFavorites() async {
+    try {
+      if (widget.user.token == null) {
+        setState(() {
+          error = 'Non authentifié';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/favorites'),
+        headers: {
+          'Authorization': 'Bearer ${widget.user.token}',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          favorites = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = 'Erreur lors du chargement des favoris';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Erreur: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> removeFavorite(int listingId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${AppConfig.baseUrl}/favorites/$listingId'),
+        headers: {
+          'Authorization': 'Bearer ${widget.user.token}',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          favorites.removeWhere(
+              (favorite) => favorite['listing_id'] == listingId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Favori supprimé avec succès'),
+            backgroundColor: AppTheme.primaryColor,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la suppression: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 1,
-              ),
-            ],
-          ),
-          child: AppBar(
-            elevation: 0,
-            backgroundColor: Colors.white,
-            title: const Text(
-              'Favorites',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.black),
-                onPressed: () {},
-              ),
-            ],
-            flexibleSpace: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ),
-            ),
-          ),
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
         ),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        itemCount: 6,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  offset: const Offset(0, 2),
-                  blurRadius: 8,
-                ),
-              ],
+      );
+    }
+
+    if (error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Colors.red,
             ),
-            child: ClipRRect( 
+            const SizedBox(height: 16),
+            Text(
+              error!,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: fetchFavorites,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (favorites.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.favorite_border,
+              size: 48,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Aucun favori pour le moment',
+              style: TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: fetchFavorites,
+      color: AppTheme.primaryColor,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: favorites.length,
+        itemBuilder: (context, index) {
+          final favorite = favorites[index];
+          final listing = favorite['listing'];
+          final firstPhoto = listing['photos'].isNotEmpty 
+              ? listing['photos'][0]['url'] 
+              : null;
+
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              child: Row(
+            ),
+            margin: const EdgeInsets.only(bottom: 16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                // Navigation vers le détail
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: NetworkImage(apartmentImages[index]),
+                  if (firstPhoto != null)
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child: Image.network(
+                        firstPhoto,
+                        height: 200,
+                        width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                     ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          listing['title'] ?? 'Sans titre',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${listing['price']}€',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            index == 0 ? 'Villa Grand Yoff' :
-                            index == 1 ? 'Appartement Mermoz' :
-                            index == 2 ? 'Studio Ouakam' :
-                            index == 3 ? 'Villa Almadies' :
-                            index == 4 ? 'Appartement Sacré-Cœur' : 'Studio Liberté 6',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.star,
-                                      size: 14,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '4.8',
-                                      style: TextStyle(
-                                        color: AppTheme.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Spacer(),
-                              const Icon(
-                                Icons.favorite,
-                                color: AppTheme.primaryColor,
-                                size: 22,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                index == 0 ? '75000 FCFA' :
-                                index == 1 ? '95000 FCFA' :
-                                index == 2 ? '45000 FCFA' :
-                                index == 3 ? '150000 FCFA' :
-                                index == 4 ? '85000 FCFA' : '55000 FCFA',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ),
-                              Text(
-                                '/nuit',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.favorite,
+                        color: Colors.red,
                       ),
+                      onPressed: () => removeFavorite(listing['id']),
                     ),
                   ),
                 ],
