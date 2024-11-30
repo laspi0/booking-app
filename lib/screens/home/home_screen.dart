@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _screens = [
       HomeTab(user: widget.user),
-      MessagesTab(user: widget.user),
+      MessagesTab(),
       FavoritesTab(user: widget.user),
       ProfileTab(user: widget.user),
     ];
