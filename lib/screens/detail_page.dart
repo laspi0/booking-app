@@ -125,44 +125,38 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     );
   }
 
-Widget _buildFeature(IconData icon, String text) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.shade200,
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-        ),
-      ],
-      border: Border.all(color: Colors.grey.shade100, width: 1),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon, 
-          size: 20, 
-          color: Theme.of(context).primaryColor
-        ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[800],
+  Widget _buildFeature(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-
+        ],
+        border: Border.all(color: Colors.grey.shade100, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -363,65 +357,118 @@ Widget _buildFeature(IconData icon, String text) {
                   ),
                 ),
                 const SizedBox(height: 20),
-            Wrap(
- spacing: 12, // Espacement horizontal entre les éléments
- runSpacing: 10, // Espacement vertical entre les lignes
- alignment: WrapAlignment.center, // Centrer les éléments
- children: [
-   _buildFeature(Icons.square_foot, '${widget.listing.measurement} m²'),
-   _buildFeature(Icons.apartment, widget.listing.type),
-   _buildFeature(Icons.location_on, widget.listing.address),
- ],
-),
-                const SizedBox(height: 20),
-                const Text(
-                  'Description',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  widget.listing.description,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
-                    color: Colors.black87,
-                  ),
+                Wrap(
+                  spacing: 12, // Espacement horizontal entre les éléments
+                  runSpacing: 10, // Espacement vertical entre les lignes
+                  alignment: WrapAlignment.center, // Centrer les éléments
+                  children: [
+                    _buildFeature(
+                        Icons.square_foot, '${widget.listing.measurement} m²'),
+                    _buildFeature(Icons.apartment, widget.listing.type),
+                    _buildFeature(Icons.location_on, widget.listing.address),
+                  ],
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Commentaires',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _commentController,
-                  decoration: InputDecoration(
-                    hintText: 'Écrire un commentaire...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[900],
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _postComment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.listing.description,
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.6,
+                        color: Colors.grey[800],
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
-                  ),
-                  child: const Text('Publier le commentaire'),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Commentaires',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[900],
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade200,
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: 'Écrire un commentaire...',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[500],
+                            fontWeight: FontWeight.w400,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppTheme.primaryColor.withOpacity(0.5),
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                        ),
+                        maxLines: 3,
+                        style: TextStyle(
+                          color: Colors.grey[800],
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _postComment,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+                        ),
+                        child: Text(
+                          'Publier le commentaire',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 80),
               ]),
