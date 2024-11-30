@@ -125,29 +125,44 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     );
   }
 
-  Widget _buildFeature(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20, color: AppTheme.primaryColor),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+Widget _buildFeature(IconData icon, String text) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.shade200,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+      border: Border.all(color: Colors.grey.shade100, width: 1),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon, 
+          size: 20, 
+          color: Theme.of(context).primaryColor
+        ),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[800],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -348,17 +363,16 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildFeature(
-                        Icons.square_foot, '${widget.listing.measurement} m²'),
-                    _buildFeature(Icons.apartment, widget.listing.type),
-                    _buildFeature(
-                        Icons.check_circle_outline, widget.listing.status),
-                  ],
-                ),
+            Wrap(
+ spacing: 12, // Espacement horizontal entre les éléments
+ runSpacing: 10, // Espacement vertical entre les lignes
+ alignment: WrapAlignment.center, // Centrer les éléments
+ children: [
+   _buildFeature(Icons.square_foot, '${widget.listing.measurement} m²'),
+   _buildFeature(Icons.apartment, widget.listing.type),
+   _buildFeature(Icons.location_on, widget.listing.address),
+ ],
+),
                 const SizedBox(height: 20),
                 const Text(
                   'Description',
