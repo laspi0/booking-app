@@ -1,5 +1,5 @@
 // lib/models/listing.dart
-import '../config/app_config.dart';
+import '../models/user.dart'; // Importez le modèle User
 
 class Listing {
   final int id;
@@ -11,7 +11,8 @@ class Listing {
   final String address;
   final String status;
   final List<String> photos;
-   bool isFavorited;
+  bool isFavorited;
+  final User? owner; // Ajoutez cette ligne (optionnel)
 
   Listing({
     required this.id,
@@ -23,8 +24,8 @@ class Listing {
     required this.address,
     required this.status,
     required this.photos,
+    this.owner, // Ajoutez cette ligne
     this.isFavorited = false,
-
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -39,8 +40,7 @@ class Listing {
       status: json['status'],
       photos: (json['photos'] as List).map((photo) => photo['path'] as String).toList(),
       isFavorited: json['is_favorited'] ?? false,
-
+      owner: json['user'] != null ? User.fromJson({'user': json['user']}) : null, // Ajoutez cette ligne
     );
   }
-
 }

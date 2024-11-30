@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'dart:convert';
 
 import '../../../config/app_config.dart';
 import '../../../config/theme.dart';
 import '../../../models/listing_model.dart';
-import '../../../models/user.dart';
+import '../models/user.dart';
 
 class ListingDetailPage extends StatefulWidget {
   final Listing listing;
   final User user;
 
-  const ListingDetailPage({super.key, required this.listing, required this.user});
+  const ListingDetailPage(
+      {super.key, required this.listing, required this.user});
 
   @override
   State<ListingDetailPage> createState() => _ListingDetailPageState();
@@ -21,6 +21,7 @@ class ListingDetailPage extends StatefulWidget {
 class _ListingDetailPageState extends State<ListingDetailPage> {
   late PageController _pageController;
   final TextEditingController _commentController = TextEditingController();
+  int _currentImageIndex = 0;
 
   @override
   void initState() {
@@ -42,8 +43,6 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     }
     final baseUrl = AppConfig.baseUrl.replaceAll('/api', '');
     final fullImageUrl = '$baseUrl/storage/$relativePath';
-    debugPrint('Image Path: $relativePath');
-    debugPrint('Full Image URL: $fullImageUrl');
     return fullImageUrl;
   }
 
@@ -61,7 +60,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     final response = await http.post(
       Uri.parse('${AppConfig.baseUrl}/listings/${widget.listing.id}/comments'),
       headers: {
-        'Authorization': 'Bearer ${widget.user.token}', // Assurez-vous d'avoir un token
+        'Authorization': 'Bearer ${widget.user.token}',
         'Content-Type': 'application/json',
       },
       body: json.encode({
@@ -87,76 +86,42 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     }
   }
 
-  Widget _buildImageCarousel() {
-    if (widget.listing.photos.isEmpty) {
-      return Container(
-        height: 300,
-        color: Colors.grey[200],
-        child: const Center(
-          child: Icon(Icons.image_not_supported, color: Colors.grey, size: 48),
-        ),
-      );
-    }
-
-    return Stack(
-      children: [
-        SizedBox(
-          height: 300,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: widget.listing.photos.length,
-            onPageChanged: (index) {
-              setState(() {
-              });
-            },
-            itemBuilder: (context, index) {
-              final imageUrl = _getFullImageUrl(widget.listing.photos[index]);
-              return Image.network(
-                imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                          : null,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Erreur de chargement de l\'image: $error');
-                  return Container(
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Icon(Icons.error_outline, color: Colors.grey),
-                    ),
-                  );
-                },
+  Widget _buildThumbnailGallery() {
+    return SizedBox(
+      height: 80,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: widget.listing.photos.length,
+        itemBuilder: (context, index) {
+          final imageUrl = _getFullImageUrl(widget.listing.photos[index]);
+          return GestureDetector(
+            onTap: () {
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
               );
             },
-          ),
-        ),
-        Positioned(
-          bottom: 16,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: SmoothPageIndicator(
-              controller: _pageController,
-              count: widget.listing.photos.length,
-              effect: WormEffect(
-                dotHeight: 8,
-                dotWidth: 8,
-                activeDotColor: AppTheme.primaryColor,
-                dotColor: Colors.white.withOpacity(0.5),
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                border: _currentImageIndex == index
+                    ? Border.all(color: AppTheme.primaryColor, width: 2)
+                    : null,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
 
@@ -168,6 +133,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 20, color: AppTheme.primaryColor),
           const SizedBox(width: 8),
@@ -183,160 +149,300 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     );
   }
 
-  Widget _buildSection(String title, Widget child) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        child,
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Utilisez le propriétaire du listing ou un propriétaire par défaut
+    final listingOwner = widget.listing.owner ?? widget.user;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
             backgroundColor: Colors.white,
+            elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(35),
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.black),
+              ),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(35),
+                  ),
+                  child: const Icon(Icons.favorite_border, color: Colors.black),
+                ),
+                onPressed: () {},
+              ),
+            ],
+            floating: true,
+            pinned: true,
+            expandedHeight: 400,
             flexibleSpace: FlexibleSpaceBar(
-              background: _buildImageCarousel(),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              background: Stack(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.listing.title,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${widget.listing.price.toStringAsFixed(0)} FCFA',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
+                  PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentImageIndex = index;
+                      });
+                    },
+                    itemCount: widget.listing.photos.length,
+                    itemBuilder: (context, index) {
+                      final imageUrl =
+                          _getFullImageUrl(widget.listing.photos[index]);
+                      return Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                      );
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.grey, size: 16),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          widget.listing.address,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    right: 20,
+                    child: _buildThumbnailGallery(),
                   ),
-                  const SizedBox(height: 24),
-                  _buildSection(
-                    'Caractéristiques',
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _buildFeature(
-                          Icons.square_foot,
-                          '${widget.listing.measurement} m²',
-                        ),
-                        _buildFeature(Icons.apartment, widget.listing.type),
-                        _buildFeature(Icons.check_circle_outline, widget.listing.status),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSection(
-                    'Description',
-                    Text(
-                      widget.listing.description,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSection(
-                    'Ajouter un commentaire',
-                    Column(
-                      children: [
-                        TextField(
-                          controller: _commentController,
-                          decoration: const InputDecoration(
-                            hintText: 'Écrire un commentaire...',
-                            border: OutlineInputBorder(),
-                          ),
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _postComment,
-                          child: const Text('Publier'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: AppTheme.primaryColor,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            listingOwner.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  'Vendeur Pro',
+                                  style: TextStyle(
+                                    color: AppTheme.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 16,
+                                    color: Colors.amber[700],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '4.8',
+                                    style: TextStyle(
+                                      color: Colors.grey[800],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.message_outlined,
+                              color: AppTheme.primaryColor,
+                            ),
+                            onPressed: () {},
+                            tooltip: 'Message',
+                          ),
+                          Container(
+                            width: 1,
+                            height: 24,
+                            color: AppTheme.primaryColor.withOpacity(0.3),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.phone_outlined,
+                              color: AppTheme.primaryColor,
+                            ),
+                            onPressed: () {},
+                            tooltip: 'Appeler',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  widget.listing.title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${widget.listing.price.toStringAsFixed(0)} FCFA',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildFeature(
+                        Icons.square_foot, '${widget.listing.measurement} m²'),
+                    _buildFeature(Icons.apartment, widget.listing.type),
+                    _buildFeature(
+                        Icons.check_circle_outline, widget.listing.status),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Description',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  widget.listing.description,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Commentaires',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _commentController,
+                  decoration: InputDecoration(
+                    hintText: 'Écrire un commentaire...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _postComment,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Publier le commentaire'),
+                ),
+                const SizedBox(height: 80),
+              ]),
+            ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Implement contact functionality
-        },
-        backgroundColor: AppTheme.primaryColor,
-        icon: const Icon(Icons.phone),
-        label: const Text('Contacter'),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: ElevatedButton(
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const Text(
+            'Contacter le vendeur',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }
