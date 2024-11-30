@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import '../../../config/app_config.dart';
@@ -44,6 +45,36 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     final baseUrl = AppConfig.baseUrl.replaceAll('/api', '');
     final fullImageUrl = '$baseUrl/storage/$relativePath';
     return fullImageUrl;
+  }
+
+  Future<void> _makePhoneCall(String? phoneNumber) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Numéro de téléphone non disponible'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible de lancer l\'appel téléphonique'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _postComment() async {
@@ -331,7 +362,8 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                               Icons.phone_outlined,
                               color: AppTheme.primaryColor,
                             ),
-                            onPressed: () {},
+                            onPressed: () =>
+                                _makePhoneCall(listingOwner.number),
                             tooltip: 'Appeler',
                           ),
                         ],
