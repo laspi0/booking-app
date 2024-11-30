@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _screens = [
       HomeTab(user: widget.user),
       MessagesTab(),
-      FavoritesTab(user: widget.user),
+      FavoritesTab(token: widget.user.token ?? ''),
       ProfileTab(user: widget.user),
     ];
   }
