@@ -14,13 +14,24 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    print('User JSON: $json'); // Debugging line
+    // Vérifie si les données sont imbriquées dans un objet 'user' ou directement au premier niveau
+    final userData = json.containsKey('user') ? json['user'] : json;
+    
     return User(
-      id: json['user']['id'],
-      name: json['user']['name'],
-      email: json['user']['email'],
-      number: json['user']['number'],
-      token: json['access_token'], // Ensure token is correctly parsed
+      id: userData['id'],
+      name: userData['name'],
+      email: userData['email'],
+      number: userData['number'],
+      token: json['access_token'], // Garde le token au premier niveau
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'number': number,
+    };
   }
 }

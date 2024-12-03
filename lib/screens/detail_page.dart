@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:register/config/app_config.dart';
 import 'package:register/config/theme.dart';
 import 'package:register/controllers/listing_controller.dart';
+import 'package:register/models/comment_model.dart';
 import 'package:register/models/listing_model.dart';
 import 'package:register/models/user.dart';
+import 'package:register/services/comment_service.dart';
 import 'package:register/widgets/listings/comment_section_widget.dart';
 import 'package:register/widgets/listings/feature_widget.dart';
 import 'package:register/widgets/listings/owner_info_widget.dart';
-
 
 class ListingDetailPage extends StatefulWidget {
   final Listing listing;
@@ -24,16 +25,23 @@ class ListingDetailPage extends StatefulWidget {
 }
 
 class _ListingDetailPageState extends State<ListingDetailPage> {
-  late PageController _pageController;
-  late ListingController _listingController;
+  late final PageController _pageController;
+  late final ListingController _listingController;
+  final CommentService _commentService = CommentService();
+
   int _currentImageIndex = 0;
   final TextEditingController _commentController = TextEditingController();
+
+  List<Comment> _comments = [];
+  bool _isLoading = false;
+  bool _isPosting = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
     _listingController = ListingController(context, _commentController);
+    _fetchComments();
   }
 
   @override
@@ -43,17 +51,98 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     super.dispose();
   }
 
-  String _getFullImageUrl(String relativePath) {
-    if (relativePath.isEmpty) {
-      debugPrint('Image path est vide');
-      return '';
+  Future<void> _fetchComments() async {
+    if (mounted) {
+      setState(() => _isLoading = true);
     }
+
+    try {
+      final comments = await _commentService.getListingComments(
+          widget.listing.id, widget.user.token ?? '');
+
+      if (mounted) {
+        setState(() {
+          _comments = comments;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Erreur de récupération des commentaires : $e');
+      if (mounted) {
+        setState(() {
+          _comments = []; // Liste vide en cas d'erreur
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Impossible de charger les commentaires : $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _postComment() async {
+    final content = _commentController.text.trim();
+    if (content.isEmpty) return;
+
+    if (mounted) {
+      setState(() => _isPosting = true);
+    }
+
+    try {
+      final newComment = await _commentService.postComment(
+        listingId: widget.listing.id,
+        content: content,
+        token: widget.user.token ?? '',
+      );
+
+      if (mounted && newComment != null) {
+        setState(() {
+          _comments.insert(0, newComment);
+          _commentController.clear();
+          _isPosting = false;
+          FocusScope.of(context).unfocus();
+        });
+      }
+    } catch (e) {
+      _handleError('Erreur lors de l\'envoi du commentaire', e);
+    }
+  }
+
+  void _handleError(String message, dynamic error) {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _isPosting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$message: $error'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  String _getFullImageUrl(String relativePath) {
+    if (relativePath.isEmpty) return '';
     final baseUrl = AppConfig.baseUrl.replaceAll('/api', '');
-    final fullImageUrl = '$baseUrl/storage/$relativePath';
-    return fullImageUrl;
+    return '$baseUrl/storage/$relativePath';
   }
 
   Widget _buildThumbnailGallery() {
+    if (widget.listing.photos.isEmpty) {
+      return const SizedBox(
+        height: 80,
+        child: Center(child: Text('Aucune photo disponible')),
+      );
+    }
+
     return SizedBox(
       height: 80,
       child: ListView.builder(
@@ -61,34 +150,47 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
         itemCount: widget.listing.photos.length,
         itemBuilder: (context, index) {
           final imageUrl = _getFullImageUrl(widget.listing.photos[index]);
-          return GestureDetector(
-            onTap: () {
-              _pageController.animateToPage(
-                index,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            },
-            child: Container(
-              width: 60,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                border: _currentImageIndex == index
-                    ? Border.all(color: AppTheme.primaryColor, width: 2)
-                    : null,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          );
+          return _buildThumbnail(index, imageUrl);
         },
       ),
+    );
+  }
+
+  Widget _buildThumbnail(int index, String imageUrl) {
+    return GestureDetector(
+      onTap: () => _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      ),
+      child: Container(
+        width: 60,
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          border: _currentImageIndex == index
+              ? Border.all(color: AppTheme.primaryColor, width: 2)
+              : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: imageUrl.isNotEmpty
+              ? Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildErrorImage(),
+                )
+              : _buildErrorImage(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorImage() {
+    return Container(
+      color: Colors.grey[200],
+      child: const Icon(Icons.error),
     );
   }
 
@@ -165,66 +267,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(35),
-                ),
-                child: const Icon(Icons.arrow_back, color: Colors.black),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(35),
-                  ),
-                  child: const Icon(Icons.favorite_border, color: Colors.black),
-                ),
-                onPressed: () {},
-              ),
-            ],
-            floating: true,
-            pinned: true,
-            expandedHeight: 400,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentImageIndex = index;
-                      });
-                    },
-                    itemCount: widget.listing.photos.length,
-                    itemBuilder: (context, index) {
-                      final imageUrl =
-                          _getFullImageUrl(widget.listing.photos[index]);
-                      return Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  ),
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: _buildThumbnailGallery(),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildSliverAppBar(context),
           SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
@@ -240,45 +283,153 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                 const SizedBox(height: 20),
                 _buildDescription(),
                 const SizedBox(height: 24),
-                CommentSectionWidget(
-                  commentController: _commentController,
-                  onPostComment: () => _listingController.postComment(
-                    widget.listing,
-                    widget.user,
-                  ),
-                ),
+                _buildCommentSection(),
                 const SizedBox(height: 80),
               ]),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
+      bottomNavigationBar: _buildBottomContactButton(listingOwner),
+    );
+  }
+
+  SliverAppBar _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: _buildCircularIconButton(
+          Icons.arrow_back, () => Navigator.pop(context)),
+      actions: [
+        _buildCircularIconButton(Icons.favorite_border,
+            () {} // TODO: Implement favorite functionality
+            ),
+      ],
+      floating: true,
+      pinned: true,
+      expandedHeight: 400,
+      flexibleSpace: FlexibleSpaceBar(
+        background: _buildImageGallery(),
+      ),
+    );
+  }
+
+  Widget _buildCircularIconButton(IconData icon, VoidCallback onPressed) {
+    return IconButton(
+      icon: Container(
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-            ),
-          ],
+          borderRadius: BorderRadius.circular(35),
         ),
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+        child: Icon(icon, color: Colors.black),
+      ),
+      onPressed: onPressed,
+    );
+  }
+
+  Widget _buildImageGallery() {
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentImageIndex = index;
+            });
+          },
+          itemCount: widget.listing.photos.length,
+          itemBuilder: (context, index) {
+            final imageUrl = _getFullImageUrl(widget.listing.photos[index]);
+            return Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+            );
+          },
+        ),
+        Positioned(
+          bottom: 20,
+          left: 20,
+          right: 20,
+          child: _buildThumbnailGallery(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Commentaires',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[900],
           ),
-          child: const Text(
-            'Contacter le vendeur',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+        ),
+        const SizedBox(height: 10),
+        if (_isLoading)
+          const Center(child: CircularProgressIndicator())
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _comments.length,
+            itemBuilder: (context, index) {
+              final comment = _comments[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: ListTile(
+                  title: Text(
+                    comment.user?.name ?? 'Utilisateur anonyme',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(comment.content),
+                  trailing: Text(
+                    '${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ),
+              );
+            },
+          ),
+        CommentSectionWidget(
+          commentController: _commentController,
+          onPostComment: _postComment,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomContactButton(User listingOwner) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: () => _listingController.makePhoneCall(listingOwner.number),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: const Text(
+          'Contacter le vendeur',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
