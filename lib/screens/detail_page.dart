@@ -101,7 +101,18 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
 
       if (mounted && newComment != null) {
         setState(() {
-          _comments.insert(0, newComment);
+          // Créez manuellement un nouvel objet Comment avec les informations de l'utilisateur actuel
+          final commentWithUser = Comment(
+            id: newComment.id,
+            userId: widget.user.id,
+            listingId: widget.listing.id,
+            content: content,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            user: widget.user, // Utilisez l'utilisateur actuel
+          );
+
+          _comments.insert(0, commentWithUser);
           _commentController.clear();
           _isPosting = false;
           FocusScope.of(context).unfocus();
