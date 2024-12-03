@@ -9,6 +9,7 @@ import 'package:register/services/comment_service.dart';
 import 'package:register/widgets/listings/comment_section_widget.dart';
 import 'package:register/widgets/listings/feature_widget.dart';
 import 'package:register/widgets/listings/owner_info_widget.dart';
+import 'package:register/widgets/comments/comment_section.dart';
 
 class ListingDetailPage extends StatefulWidget {
   final Listing listing;
@@ -370,48 +371,11 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   }
 
   Widget _buildCommentSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Commentaires',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[900],
-          ),
-        ),
-        const SizedBox(height: 10),
-        if (_isLoading)
-          const Center(child: CircularProgressIndicator())
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _comments.length,
-            itemBuilder: (context, index) {
-              final comment = _comments[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  title: Text(
-                    comment.user?.name ?? 'Utilisateur anonyme',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(comment.content),
-                  trailing: Text(
-                    '${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-              );
-            },
-          ),
-        CommentSectionWidget(
-          commentController: _commentController,
-          onPostComment: _postComment,
-        ),
-      ],
+    return CommentSection(
+      commentController: _commentController,
+      onPostComment: _postComment,
+      comments: _comments,
+      isLoading: _isLoading,
     );
   }
 
