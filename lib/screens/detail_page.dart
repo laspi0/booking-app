@@ -5,6 +5,7 @@ import 'package:register/controllers/listing_controller.dart';
 import 'package:register/models/comment_model.dart';
 import 'package:register/models/listing_model.dart';
 import 'package:register/models/user.dart';
+import 'package:register/screens/reservation_screen.dart';
 import 'package:register/services/comment_service.dart';
 import 'package:register/widgets/listings/comment_section_widget.dart';
 import 'package:register/widgets/listings/feature_widget.dart';
@@ -392,16 +393,24 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () => _listingController.makePhoneCall(listingOwner.number),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ReservationPage(), // Votre page de réservation
+            ),
+          );
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 15),
+          padding: EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
         ),
         child: const Text(
-          'Contacter le vendeur',
+          'Réserver', // J'ai aussi modifié le texte du bouton
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
