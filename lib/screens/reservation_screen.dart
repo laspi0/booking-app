@@ -2,78 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:register/config/theme.dart';
 
-class Reservation {
-  final DateTime startDate;
-  final DateTime endDate;
-  final TimeOfDay startTime;
-  final TimeOfDay? endTime;
-  final String? message;
-  final String userId;
-  final String listingId;
-
-  Reservation({
-    required this.startDate,
-    required this.endDate,
-    required this.startTime,
-    this.endTime,
-    this.message,
-    required this.userId,
-    required this.listingId,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
-      'startTime': '${startTime.hour}:${startTime.minute}',
-      'endTime': endTime != null ? '${endTime!.hour}:${endTime!.minute}' : null,
-      'message': message,
-      'userId': userId,
-      'listingId': listingId,
-    };
-  }
-}
-
-class ReservationController {
-  Future<void> createReservation(Reservation reservation) async {
-    // Logique de sauvegarde de la réservation
-  }
-}
-
-class ReservationPage extends StatefulWidget {
-  final String? listingId;
-  final String? userId;  
-
-  const ReservationPage({
-    Key? key,
-    this.listingId,
-    this.userId,
-  }) : super(key: key);
+class ModernReservationPage extends StatefulWidget {
+  const ModernReservationPage({Key? key}) : super(key: key);
 
   @override
-  _ReservationPageState createState() => _ReservationPageState();
+  _ModernReservationPageState createState() => _ModernReservationPageState();
 }
 
-class _ReservationPageState extends State<ReservationPage> {
-  final ReservationController _controller = ReservationController();
-  final TextEditingController _messageController = TextEditingController();
-  
-  DateTime? startDate;
-  DateTime? endDate;
-  TimeOfDay? startTime;
-  TimeOfDay? endTime;
-  
-  bool isLoading = false;
+class _ModernReservationPageState extends State<ModernReservationPage> {
+  DateTime? _startDate;
+  DateTime? _endDate;
+  TimeOfDay? _startTime;
 
-  Future<void> _selectDateRange(BuildContext context) async {
-    DateTimeRange? picked = await showDateRangePicker(
+  void _selectDateRange() async {
+    final DateTimeRange? result = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppTheme.primaryColor,
               primary: AppTheme.primaryColor,
             ),
           ),
@@ -82,22 +32,23 @@ class _ReservationPageState extends State<ReservationPage> {
       },
     );
 
-    if (picked != null) {
+    if (result != null) {
       setState(() {
-        startDate = picked.start;
-        endDate = picked.end;
+        _startDate = result.start;
+        _endDate = result.end;
       });
     }
   }
 
-  Future<void> _selectStartTime(BuildContext context) async {
+  void _selectTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppTheme.primaryColor,
               primary: AppTheme.primaryColor,
             ),
           ),
@@ -105,210 +56,165 @@ class _ReservationPageState extends State<ReservationPage> {
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
-        startTime = picked;
+        _startTime = picked;
       });
     }
-  }
-
-  Future<void> _selectEndTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: startTime ?? TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primaryColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    
-    if (picked != null) {
-      setState(() {
-        endTime = picked;
-      });
-    }
-  }
-
-  Future<void> _submitReservation() async {
-    if (startDate == null || endDate == null || startTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner une date de début, une date de fin et une heure de début'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Validation : date de fin ne peut pas être avant la date de début
-    if (endDate!.isBefore(startDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La date de fin doit être après la date de début'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final reservation = Reservation(
-        startDate: startDate!,
-        endDate: endDate!,
-        startTime: startTime!,
-        endTime: endTime,
-        message: _messageController.text.trim(),
-        userId: 'user_id', // Remplacer par l'ID utilisateur réel
-        listingId: 'listing_id', // Remplacer par l'ID de la liste réel
-      );
-
-      await _controller.createReservation(reservation);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Réservation confirmée !'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    String formattedStartDate = startDate != null
-        ? DateFormat('dd/MM/yyyy').format(startDate!)
-        : 'Date de début';
-    
-    String formattedEndDate = endDate != null
-        ? DateFormat('dd/MM/yyyy').format(endDate!)
-        : 'Date de fin';
-    
-    String formattedStartTime = startTime != null
-        ? startTime!.format(context)
-        : 'Heure de début';
-    
-    String formattedEndTime = endTime != null
-        ? endTime!.format(context)
-        : 'Heure de fin (optionnel)';
-
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Réservation'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.calendar_today),
-                        title: Text('Début : $formattedStartDate'),
-                        subtitle: Text('Fin : $formattedEndDate'),
-                        onTap: () => _selectDateRange(context),
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(Icons.access_time),
-                        title: Text('Début : $formattedStartTime'),
-                        subtitle: Text('Fin : $formattedEndTime'),
-                        onTap: () {
-                          _selectStartTime(context);
-                          if (startTime != null) {
-                            _selectEndTime(context);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _messageController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Message (optionnel)',
-                      border: InputBorder.none,
-                      hintText: 'Écrivez un message au vendeur...',
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: isLoading ? null : _submitReservation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Confirmer la réservation',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ],
+        elevation: 0,
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Nouvelle Réservation', 
+          style: TextStyle(
+            color: Colors.black, 
+            fontWeight: FontWeight.w600
           ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Date Selection
+            GestureDetector(
+              onTap: _selectDateRange,
+              child: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Date de début',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          _startDate != null 
+                            ? DateFormat('dd MMM yyyy').format(_startDate!) 
+                            : 'Sélectionner',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Date de fin',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          _endDate != null 
+                            ? DateFormat('dd MMM yyyy').format(_endDate!) 
+                            : 'Sélectionner',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Time Selection
+            GestureDetector(
+              onTap: _selectTime,
+              child: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Heure de début',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          _startTime != null 
+                            ? _startTime!.format(context)
+                            : 'Sélectionner',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Icon(
+                      Icons.timer_outlined,
+                      color: Colors.grey.shade600,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const Spacer(),
+
+            // Confirm Button
+            ElevatedButton(
+              onPressed: () {
+                // Logique de confirmation de réservation
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Confirmer',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
