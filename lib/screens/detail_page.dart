@@ -398,7 +398,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  ModernReservationPage(), // Votre page de réservation
+                  ReservationPage(), // Votre page de réservation
             ),
           );
         },

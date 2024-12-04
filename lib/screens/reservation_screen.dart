@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:register/config/theme.dart';
 
-class ModernReservationPage extends StatefulWidget {
-  const ModernReservationPage({Key? key}) : super(key: key);
-
+class ReservationPage extends StatefulWidget {
+  const ReservationPage({Key? key}) : super(key: key);
   @override
-  _ModernReservationPageState createState() => _ModernReservationPageState();
+  _ReservationPageState createState() => _ReservationPageState();
 }
 
-class _ModernReservationPageState extends State<ModernReservationPage> {
+class _ReservationPageState extends State<ReservationPage> {
   DateTime? _startDate;
   DateTime? _endDate;
-  TimeOfDay? _startTime;
+  int _selectedMonths = 1;
+  final double _monthlyRate = 80000;
 
   void _selectDateRange() async {
     final DateTimeRange? result = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: AppTheme.primaryColor,
-              primary: AppTheme.primaryColor,
+              seedColor: Colors.teal,
+              primary: Colors.teal,
             ),
           ),
           child: child!,
@@ -36,185 +35,201 @@ class _ModernReservationPageState extends State<ModernReservationPage> {
       setState(() {
         _startDate = result.start;
         _endDate = result.end;
+        _selectedMonths = _calculateMonthsDifference(_startDate!, _endDate!);
       });
     }
   }
 
-  void _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppTheme.primaryColor,
-              primary: AppTheme.primaryColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+  int _calculateMonthsDifference(DateTime start, DateTime end) {
+    return (end.year - start.year) * 12 + end.month - start.month + 1;
+  }
 
-    if (picked != null) {
-      setState(() {
-        _startTime = picked;
-      });
-    }
+  double _calculateTotalPrice() {
+    return _selectedMonths * _monthlyRate;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Nouvelle Réservation', 
-          style: TextStyle(
-            color: Colors.black, 
-            fontWeight: FontWeight.w600
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Date Selection
-            GestureDetector(
-              onTap: _selectDateRange,
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Date de début',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          _startDate != null 
-                            ? DateFormat('dd MMM yyyy').format(_startDate!) 
-                            : 'Sélectionner',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Date de fin',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          _endDate != null 
-                            ? DateFormat('dd MMM yyyy').format(_endDate!) 
-                            : 'Sélectionner',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Close Button
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.black54),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
-
-            // Time Selection
-            GestureDetector(
-              onTap: _selectTime,
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Heure de début',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          _startTime != null 
-                            ? _startTime!.format(context)
-                            : 'Sélectionner',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Icon(
-                      Icons.timer_outlined,
-                      color: Colors.grey.shade600,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            // Confirm Button
-            ElevatedButton(
-              onPressed: () {
-                // Logique de confirmation de réservation
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Confirmer',
+              // Title
+              const Text(
+                'Nouvelle Réservation',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+
+              // Date Range Selector
+              GestureDetector(
+                onTap: _selectDateRange,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Période de réservation',
+                        style: TextStyle(
+                          color: Colors.teal.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _startDate != null 
+                              ? DateFormat('dd MMM yyyy').format(_startDate!) 
+                              : 'Date de début',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            _endDate != null 
+                              ? DateFormat('dd MMM yyyy').format(_endDate!) 
+                              : 'Date de fin',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Pricing Section
+              if (_startDate != null && _endDate != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Détails de la réservation',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Durée de réservation',
+                            style: TextStyle(color: Colors.grey.shade700),
+                          ),
+                          Text(
+                            '$_selectedMonths mois',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tarif mensuel',
+                            style: TextStyle(color: Colors.grey.shade700),
+                          ),
+                          Text(
+                            '${NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(_monthlyRate)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Divider(),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(_calculateTotalPrice()),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.teal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              const Spacer(),
+
+              // Confirm Button
+              if (_startDate != null && _endDate != null)
+                ElevatedButton(
+                  onPressed: () {
+                    // Logique de confirmation de réservation
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    minimumSize: const Size(double.infinity, 60),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: const Text(
+                    'Confirmer la réservation',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
