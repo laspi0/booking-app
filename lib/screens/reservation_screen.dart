@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:register/screens/payment_page.dart'; // Adjust the path as necessary
 
 class ReservationPage extends StatefulWidget {
   const ReservationPage({Key? key}) : super(key: key);
@@ -103,18 +104,18 @@ class _ReservationPageState extends State<ReservationPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            _startDate != null 
-                              ? DateFormat('dd MMM yyyy').format(_startDate!) 
-                              : 'Date de début',
+                            _startDate != null
+                                ? DateFormat('dd MMM yyyy').format(_startDate!)
+                                : 'Date de début',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
                           Text(
-                            _endDate != null 
-                              ? DateFormat('dd MMM yyyy').format(_endDate!) 
-                              : 'Date de fin',
+                            _endDate != null
+                                ? DateFormat('dd MMM yyyy').format(_endDate!)
+                                : 'Date de fin',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -190,7 +191,9 @@ class _ReservationPageState extends State<ReservationPage> {
                             ),
                           ),
                           Text(
-                            NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(_calculateTotalPrice()),
+                            NumberFormat.currency(
+                                    locale: 'fr_XAF', symbol: 'FCFA')
+                                .format(_calculateTotalPrice()),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -209,7 +212,13 @@ class _ReservationPageState extends State<ReservationPage> {
               if (_startDate != null && _endDate != null)
                 ElevatedButton(
                   onPressed: () {
-                    // Logique de confirmation de réservation
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PaymentPage(), // Ensure this is correct
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
@@ -226,7 +235,7 @@ class _ReservationPageState extends State<ReservationPage> {
                     ),
                   ),
                 ),
-              
+
               const SizedBox(height: 20),
             ],
           ),
