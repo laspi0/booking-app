@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -18,6 +17,8 @@ class _PaymentPageState extends State<PaymentPage> {
     });
 
     try {
+      print('Début de la requête de paiement');
+      
       final response = await http.post(
         Uri.parse('https://www.pay.moneyfusion.net/immo/90c545e1d30b5cc3/pay/'),
         headers: {
@@ -26,8 +27,14 @@ class _PaymentPageState extends State<PaymentPage> {
         },
         body: jsonEncode({
           'totalPrice': 200,
-          'article': [{'sac': 100, 'chaussure': 100}],
-          'personal_Info': [{'userId': 1, 'orderId': 123}],
+          'article': [{
+            'sac': 100,
+            'chaussure': 100
+          }],
+          'personal_Info': [{
+            'userId': 1,
+            'orderId': 123
+          }],
           'numeroSend': '0101010101',
           'nomclient': 'John Doe',
           'return_url': 'https://votre-site-de-retour.com/payment-return',
@@ -36,24 +43,34 @@ class _PaymentPageState extends State<PaymentPage> {
         }),
       );
 
-      final paymentData = jsonDecode(response.body);
+      print('Statut de la réponse : ${response.statusCode}');
+      print('Corps de la réponse : ${response.body}');
 
-      if (paymentData['statut'] == true && paymentData['url'] != null) {
-        final Uri url = Uri.parse(paymentData['url']);
-        try {
-          await launchUrl(
-            url,
-            mode: LaunchMode.externalApplication,
-            webViewConfiguration: const WebViewConfiguration(
-              enableJavaScript: true,
-              enableDomStorage: true,
+      if (response.statusCode == 200) {
+        final paymentData = jsonDecode(response.body);
+        
+        print('Données de paiement : $paymentData');
+
+        if (paymentData['statut'] == true && paymentData['url'] != null) {
+          print('URL de paiement : ${paymentData['url']}');
+          
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PaymentWebView(
+                url: paymentData['url'],
+                token: paymentData['token'],
+              ),
             ),
           );
-        } catch (e) {
-          _showErrorSnackBar('Impossible d\'ouvrir l\'URL de paiement: $e');
+        } else {
+          _showErrorSnackBar('Impossible de traiter le paiement');
         }
+      } else {
+        _showErrorSnackBar('Erreur de serveur: ${response.statusCode}');
       }
     } catch (e) {
+      print('Erreur complète : $e');
       _showErrorSnackBar('Erreur de connexion: $e');
     } finally {
       setState(() {
@@ -113,8 +130,7 @@ class PaymentWebView extends StatefulWidget {
   final String url;
   final String token;
 
-  const PaymentWebView({Key? key, required this.url, required this.token})
-      : super(key: key);
+  const PaymentWebView({Key? key, required this.url, required this.token}) : super(key: key);
 
   @override
   _PaymentWebViewState createState() => _PaymentWebViewState();
@@ -122,21 +138,26 @@ class PaymentWebView extends StatefulWidget {
 
 class _PaymentWebViewState extends State<PaymentWebView> {
   late WebViewController _controller;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-
-    print('URL dans WebView : ${widget.url}');
-
+    
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
+            setState(() {
+              isLoading = true;
+            });
             print('Chargement de l\'URL : $url');
           },
           onPageFinished: (String url) {
+            setState(() {
+              isLoading = false;
+            });
             print('Chargement terminé : $url');
           },
           onWebResourceError: (WebResourceError error) {
@@ -144,8 +165,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
           },
           onNavigationRequest: (NavigationRequest request) {
             print('Navigation vers : ${request.url}');
-            if (request.url.startsWith(
-                'https://votre-site-de-retour.com/payment-return')) {
+            if (request.url.startsWith('https://votre-site-de-retour.com/payment-return')) {
               _verifyPaymentStatus();
               return NavigationDecision.prevent;
             }
@@ -156,15 +176,11 @@ class _PaymentWebViewState extends State<PaymentWebView> {
       ..loadRequest(Uri.parse(widget.url));
   }
 
-  void _verifyPaymentStatus() async {
-    try {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Paiement vérifié avec succès')));
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Erreur de vérification: $e')));
-    }
+  void _verifyPaymentStatus() {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Paiement vérifié avec succès'))
+    );
   }
 
   @override
@@ -177,7 +193,15 @@ class _PaymentWebViewState extends State<PaymentWebView> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: WebViewWidget(controller: _controller),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (isLoading)
+            Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
+      ),
     );
   }
 }
