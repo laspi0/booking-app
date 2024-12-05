@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -165,10 +166,24 @@ class _PaymentWebViewState extends State<PaymentWebView> {
           },
           onNavigationRequest: (NavigationRequest request) {
             print('Navigation vers : ${request.url}');
+            
+            // Gestion des liens mobile money et autres liens externes
+            if (request.url.startsWith('intent://') ||
+                request.url.startsWith('mtn://') ||
+                request.url.startsWith('orange://') ||
+                request.url.startsWith('moov://') ||
+                request.url.startsWith('wave://') ||
+                !request.url.startsWith('http')) {
+              _handleExternalLink(request.url);
+              return NavigationDecision.prevent;
+            }
+            
+            // Gestion du retour après paiement
             if (request.url.startsWith('https://votre-site-de-retour.com/payment-return')) {
               _verifyPaymentStatus();
               return NavigationDecision.prevent;
             }
+            
             return NavigationDecision.navigate;
           },
         ),
@@ -181,6 +196,21 @@ class _PaymentWebViewState extends State<PaymentWebView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Paiement vérifié avec succès'))
     );
+  }
+    Future<void> _handleExternalLink(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible d\'ouvrir l\'application: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
