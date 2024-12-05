@@ -397,8 +397,10 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ReservationPage(), // Votre page de réservation
+              builder: (context) => ReservationPage(
+                listingId: widget.listing.id,
+                userId: widget.user.id,
+              ),
             ),
           );
         },

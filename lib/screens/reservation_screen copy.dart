@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:register/controllers/reservation_controller.dart';
+import 'package:register/models/listing_model.dart';
 import 'package:register/models/reservation.dart';
 import 'package:register/screens/payment_page.dart';
 
 class ReservationPage extends StatefulWidget {
-  final int listingId;
+  final Listing listing; // Passez le listing entier
   final int userId;
 
   const ReservationPage({
-    Key? key, 
-    required this.listingId, 
-    required this.userId
+    Key? key,
+    required this.listing,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -22,12 +23,11 @@ class _ReservationPageState extends State<ReservationPage> {
   DateTime? _startDate;
   DateTime? _endDate;
   int _selectedMonths = 1;
-  final double _monthlyRate = 80000;
-  
-  // Create an instance of ReservationController
-  final ReservationController _reservationController = ReservationController();
   Reservation? _pendingReservation;
   bool _isCreatingReservation = false;
+
+  // Create an instance of ReservationController
+  final ReservationController _reservationController = ReservationController();
 
   void _selectDateRange() async {
     final DateTimeRange? result = await showDateRangePicker(
@@ -70,18 +70,19 @@ class _ReservationPageState extends State<ReservationPage> {
       // Prepare reservation data
       final reservationData = {
         'user_id': widget.userId,
-        'listing_id': widget.listingId,
+        'listing_id': widget.listing.id,
         'start_date': _startDate!.toIso8601String(),
         'end_date': _endDate!.toIso8601String(),
         'duration_months': _selectedMonths,
-        'monthly_rate': _monthlyRate,
+        'monthly_rate': widget.listing.price, // Utilisation du tarif dynamique
         'total_amount': _calculateTotalPrice(),
         'status': 'pending',
-        'notes': 'Reservation created automatically'
+        'notes': 'Reservation created automatically',
       };
 
       // Create reservation
-      final reservation = await _reservationController.addReservation(reservationData);
+      final reservation =
+          await _reservationController.addReservation(reservationData);
 
       setState(() {
         _pendingReservation = reservation;
@@ -115,7 +116,7 @@ class _ReservationPageState extends State<ReservationPage> {
   }
 
   double _calculateTotalPrice() {
-    return _selectedMonths * _monthlyRate;
+    return _selectedMonths * widget.listing.price; // Tarif dynamique
   }
 
   @override
@@ -241,7 +242,7 @@ class _ReservationPageState extends State<ReservationPage> {
                             style: TextStyle(color: Colors.grey.shade700),
                           ),
                           Text(
-                            '${NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(_monthlyRate)}',
+                            '${NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(widget.listing.price)}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -280,18 +281,18 @@ class _ReservationPageState extends State<ReservationPage> {
               // Confirm Button
               if (_startDate != null && _endDate != null && _pendingReservation != null)
                 ElevatedButton(
-                  onPressed: _isCreatingReservation 
-                    ? null 
-                    : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaymentPage(
-                            id: _pendingReservation!.id,
-                          ),
-                        ),
-                      );
-                    },
+                  onPressed: _isCreatingReservation
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PaymentPage(
+                                id: _pendingReservation!.id,
+                              ),
+                            ),
+                          );
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
                     minimumSize: const Size(double.infinity, 60),
@@ -300,14 +301,14 @@ class _ReservationPageState extends State<ReservationPage> {
                     ),
                   ),
                   child: _isCreatingReservation
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Confirmer la réservation',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Confirmer la réservation',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
                 ),
 
               const SizedBox(height: 20),

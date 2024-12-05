@@ -5,6 +5,10 @@ import 'dart:convert';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PaymentPage extends StatefulWidget {
+  final int id;
+
+  const PaymentPage({Key? key, required this.id}) : super(key: key);
+
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
