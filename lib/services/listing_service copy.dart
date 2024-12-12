@@ -196,7 +196,7 @@ class ListingService {
         MapEntry('measurement', measurement),
         MapEntry('type', type),
         MapEntry('address', address),
-        MapEntry('_method', 'PUT'), // Laravel form method spoofing
+        const MapEntry('_method', 'PUT'), // Laravel form method spoofing
       ]);
 
       // Adding photo IDs to delete

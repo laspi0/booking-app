@@ -5,6 +5,8 @@ import 'package:register/widgets/messages/messages_list.dart';
 
 
 class MessagesTab extends StatefulWidget {
+  const MessagesTab({super.key});
+
   @override
   _MessagesTabState createState() => _MessagesTabState();
 }

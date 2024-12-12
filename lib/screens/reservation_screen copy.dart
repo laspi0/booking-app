@@ -91,7 +91,7 @@ class _ReservationPageState extends State<ReservationPage> {
 
       // Optional: Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Réservation en attente créée'),
           backgroundColor: Colors.green,
         ),
@@ -242,7 +242,7 @@ class _ReservationPageState extends State<ReservationPage> {
                             style: TextStyle(color: Colors.grey.shade700),
                           ),
                           Text(
-                            '${NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(widget.listing.price)}',
+                            NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(widget.listing.price),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -253,7 +253,7 @@ class _ReservationPageState extends State<ReservationPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Total',
                             style: TextStyle(
                               color: Colors.black87,
@@ -301,7 +301,7 @@ class _ReservationPageState extends State<ReservationPage> {
                     ),
                   ),
                   child: _isCreatingReservation
-                      ? CircularProgressIndicator(color: Colors.white)
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
                           'Confirmer la réservation',
                           style: TextStyle(

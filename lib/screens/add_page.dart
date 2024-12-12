@@ -57,12 +57,10 @@ class _AddPageState extends State<AddPage> {
   Future<void> _pickPhotos() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        _photos = pickedFiles;
-      });
+    setState(() {
+      _photos = pickedFiles;
+    });
     }
-  }
 
   Future<void> _submitListing() async {
     if (!_formKey.currentState!.validate()) {

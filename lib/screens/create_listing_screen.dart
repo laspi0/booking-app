@@ -6,6 +6,8 @@ import '../services/listing_service.dart';
 import '../models/listing_model.dart';
 
 class AddListingScreen extends StatefulWidget {
+  const AddListingScreen({super.key});
+
   @override
   _AddListingScreenState createState() => _AddListingScreenState();
 }
@@ -37,12 +39,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
   Future<void> _pickPhotos() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        _photos = pickedFiles;
-      });
+    setState(() {
+      _photos = pickedFiles;
+    });
     }
-  }
 
   Future<void> _submitListing() async {
     if (!_formKey.currentState!.validate() || _photos.isEmpty) return;
@@ -72,10 +72,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Listing'),
+        title: const Text('Add Listing'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -84,41 +84,41 @@ class _AddListingScreenState extends State<AddListingScreen> {
               children: [
                 TextFormField(
                   controller: _titleController,
-                  decoration: InputDecoration(labelText: 'Title'),
+                  decoration: const InputDecoration(labelText: 'Title'),
                   validator: (value) => value!.isEmpty ? 'Please enter a title' : null,
                 ),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: InputDecoration(labelText: 'Description'),
+                  decoration: const InputDecoration(labelText: 'Description'),
                   validator: (value) => value!.isEmpty ? 'Please enter a description' : null,
                 ),
                 TextFormField(
                   controller: _priceController,
-                  decoration: InputDecoration(labelText: 'Price'),
+                  decoration: const InputDecoration(labelText: 'Price'),
                   keyboardType: TextInputType.number,
                   validator: (value) => value!.isEmpty ? 'Please enter a price' : null,
                 ),
                 TextFormField(
                   controller: _measurementController,
-                  decoration: InputDecoration(labelText: 'Measurement'),
+                  decoration: const InputDecoration(labelText: 'Measurement'),
                   validator: (value) => value!.isEmpty ? 'Please enter a measurement' : null,
                 ),
                 TextFormField(
                   controller: _typeController,
-                  decoration: InputDecoration(labelText: 'Type'),
+                  decoration: const InputDecoration(labelText: 'Type'),
                   validator: (value) => value!.isEmpty ? 'Please enter a type' : null,
                 ),
                 TextFormField(
                   controller: _addressController,
-                  decoration: InputDecoration(labelText: 'Address'),
+                  decoration: const InputDecoration(labelText: 'Address'),
                   validator: (value) => value!.isEmpty ? 'Please enter an address' : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _pickPhotos,
-                  child: Text('Pick Photos'),
+                  child: const Text('Pick Photos'),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -131,10 +131,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
                     );
                   }).toList(),
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _submitListing,
-                  child: Text('Create Listing'),
+                  child: const Text('Create Listing'),
                 ),
               ],
             ),

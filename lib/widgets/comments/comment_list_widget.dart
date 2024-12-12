@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/* import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:register/models/comment_model.dart';
 
@@ -56,8 +56,8 @@ class CommentsList extends StatelessWidget {
                 CircleAvatar(
                   backgroundColor: Colors.blue,
                   child: Text(
-                    comment.user?.name?.isNotEmpty == true 
-                        ? comment.user!.name![0].toUpperCase() 
+                    comment.user?.name.isNotEmpty == true 
+                        ? comment.user!.name[0].toUpperCase() 
                         : '?',
                     style: const TextStyle(color: Colors.white),
                   ),
@@ -102,4 +102,4 @@ class CommentsList extends StatelessWidget {
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy à HH:mm').format(date);
   }
-}
+} */

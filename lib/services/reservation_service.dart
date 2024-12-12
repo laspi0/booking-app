@@ -31,6 +31,25 @@ class ReservationService {
     }
   }
 
+  Future<List<DateTime>> fetchUnavailableDates(int listingId) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/listings/$listingId/unavailable-dates');
+    try {
+      final response = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      });
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> dates = jsonDecode(response.body);
+        return dates.map((date) => DateTime.parse(date)).toList();
+      } else {
+        throw Exception('Échec du chargement des dates. Code : ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur lors de la récupération des dates : $e');
+    }
+  }
+
   Future<Reservation> createReservation(Map reservationData) async {
     print('--- Creating Reservation ---');
     print('Données envoyées : $reservationData');

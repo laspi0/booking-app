@@ -83,7 +83,7 @@ class CommentSectionWidget extends StatelessWidget {
               elevation: 4,
               shadowColor: AppTheme.primaryColor.withOpacity(0.4),
             ),
-            child: Text(
+            child: const Text(
               'Publier le commentaire',
               style: TextStyle(
                 fontSize: 16,

@@ -4,7 +4,7 @@ import '../config/app_config.dart';
 import 'token_service.dart';
 
 class FavoriteService {
-  static final String baseUrl = AppConfig.baseUrl;
+  static const String baseUrl = AppConfig.baseUrl;
 
   static Future<bool> addFavorite(int listingId) async {
     final url = Uri.parse('$baseUrl/favorites/$listingId');

@@ -55,9 +55,9 @@ class FavoritesItem extends StatelessWidget {
                           color: AppTheme.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(Icons.star, size: 14, color: AppTheme.primaryColor),
                             SizedBox(width: 4),
                             Text('4.8', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),

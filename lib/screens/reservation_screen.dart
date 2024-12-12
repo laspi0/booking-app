@@ -3,16 +3,15 @@ import 'package:intl/intl.dart';
 import 'package:register/controllers/reservation_controller.dart';
 import 'package:register/models/reservation.dart';
 import 'package:register/screens/payment_page.dart';
+import '../services/reservation_service.dart';
 
 class ReservationPage extends StatefulWidget {
   final int listingId;
   final int userId;
 
-  const ReservationPage({
-    Key? key, 
-    required this.listingId, 
-    required this.userId
-  }) : super(key: key);
+  const ReservationPage(
+      {Key? key, required this.listingId, required this.userId})
+      : super(key: key);
 
   @override
   _ReservationPageState createState() => _ReservationPageState();
@@ -23,11 +22,36 @@ class _ReservationPageState extends State<ReservationPage> {
   DateTime? _endDate;
   int _selectedMonths = 1;
   final double _monthlyRate = 80000;
-  
-  // Create an instance of ReservationController
+
   final ReservationController _reservationController = ReservationController();
+  final ReservationService _reservationService = ReservationService();
+
   Reservation? _pendingReservation;
   bool _isCreatingReservation = false;
+  List<DateTime> _unavailableDates = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnavailableDates();
+  }
+
+  Future<void> _fetchUnavailableDates() async {
+    try {
+      final dates =
+          await _reservationService.fetchUnavailableDates(widget.listingId);
+      setState(() {
+        _unavailableDates = dates;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la récupération des dates: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   void _selectDateRange() async {
     final DateTimeRange? result = await showDateRangePicker(
@@ -81,7 +105,8 @@ class _ReservationPageState extends State<ReservationPage> {
       };
 
       // Create reservation
-      final reservation = await _reservationController.addReservation(reservationData);
+      final reservation =
+          await _reservationController.addReservation(reservationData);
 
       setState(() {
         _pendingReservation = reservation;
@@ -90,7 +115,7 @@ class _ReservationPageState extends State<ReservationPage> {
 
       // Optional: Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Réservation en attente créée'),
           backgroundColor: Colors.green,
         ),
@@ -196,7 +221,6 @@ class _ReservationPageState extends State<ReservationPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
 
               // Pricing Section
@@ -241,7 +265,7 @@ class _ReservationPageState extends State<ReservationPage> {
                             style: TextStyle(color: Colors.grey.shade700),
                           ),
                           Text(
-                            '${NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(_monthlyRate)}',
+                            NumberFormat.currency(locale: 'fr_XAF', symbol: 'FCFA').format(_monthlyRate),
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -252,7 +276,7 @@ class _ReservationPageState extends State<ReservationPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Total',
                             style: TextStyle(
                               color: Colors.black87,
@@ -274,24 +298,25 @@ class _ReservationPageState extends State<ReservationPage> {
                     ],
                   ),
                 ),
-
               const Spacer(),
 
               // Confirm Button
-              if (_startDate != null && _endDate != null && _pendingReservation != null)
+              if (_startDate != null &&
+                  _endDate != null &&
+                  _pendingReservation != null)
                 ElevatedButton(
-                  onPressed: _isCreatingReservation 
-                    ? null 
-                    : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaymentPage(
-                            id: _pendingReservation!.id,
-                          ),
-                        ),
-                      );
-                    },
+                  onPressed: _isCreatingReservation
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PaymentPage(
+                                id: _pendingReservation!.id,
+                              ),
+                            ),
+                          );
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
                     minimumSize: const Size(double.infinity, 60),
@@ -300,16 +325,15 @@ class _ReservationPageState extends State<ReservationPage> {
                     ),
                   ),
                   child: _isCreatingReservation
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Confirmer la réservation',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Confirmer la réservation',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
                 ),
-
               const SizedBox(height: 20),
             ],
           ),

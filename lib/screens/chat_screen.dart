@@ -26,7 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _fetchMessages();
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted) {
         _fetchMessages();
       }
@@ -79,7 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       }
@@ -119,7 +119,7 @@ Widget build(BuildContext context) {
       backgroundColor: Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
       titleSpacing: 0,
@@ -130,22 +130,22 @@ Widget build(BuildContext context) {
             backgroundColor: Colors.grey[300],
             child: Text(
               widget.conversation.senderName[0].toUpperCase(),
-              style: TextStyle(color: Colors.black),
+              style: const TextStyle(color: Colors.black),
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 widget.conversation.senderName,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Text(
+              const Text(
                 'Actif aujourd\'hui',
                 style: TextStyle(
                   color: Colors.grey,
@@ -158,7 +158,7 @@ Widget build(BuildContext context) {
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.phone, color: Colors.black),
+          icon: const Icon(Icons.phone, color: Colors.black),
           onPressed: () {},
         ),
       ],
@@ -167,12 +167,12 @@ Widget build(BuildContext context) {
       children: [
         Expanded(
           child: _isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : _error != null
                   ? Center(child: Text('Erreur: $_error'))
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final message = _messages[index];
@@ -186,12 +186,12 @@ Widget build(BuildContext context) {
                               left: isMe ? 50 : 0,
                               right: isMe ? 0 : 50,
                             ),
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: isMe ? Theme.of(context).primaryColor: Color(0xFFE4E6EB),
+                              color: isMe ? Theme.of(context).primaryColor: const Color(0xFFE4E6EB),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -207,7 +207,7 @@ Widget build(BuildContext context) {
                     ),
         ),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border(
@@ -228,7 +228,7 @@ Widget build(BuildContext context) {
                       decoration: InputDecoration(
                         hintText: 'Saisissez un message...',
                         hintStyle: TextStyle(color: Colors.grey[600]),
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
                         ),
@@ -237,16 +237,16 @@ Widget build(BuildContext context) {
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: _sendMessage,
                   child: Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Theme.of(context).primaryColor,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.arrow_upward,
                       color: Colors.white,
                       size: 20,

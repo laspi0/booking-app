@@ -5,6 +5,8 @@ import '../services/conversation_service.dart';
 import 'chat_screen.dart';
 
 class ConversationsListScreen extends StatefulWidget {
+  const ConversationsListScreen({super.key});
+
   @override
   _ConversationsListScreenState createState() =>
       _ConversationsListScreenState();
@@ -20,7 +22,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
   void initState() {
     super.initState();
     _fetchConversations();
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted) {
         _fetchConversations();
       }
@@ -86,7 +88,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
         ),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text('Erreur: $_error'))
               : ListView.builder(

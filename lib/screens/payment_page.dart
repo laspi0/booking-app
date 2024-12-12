@@ -89,7 +89,7 @@ class _PaymentPageState extends State<PaymentPage> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
-        duration: Duration(seconds: 5),
+        duration: const Duration(seconds: 5),
       ),
     );
   }
@@ -98,7 +98,7 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Paiement'),
+        title: const Text('Paiement'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -115,7 +115,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
               ),
               child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
+                  ? const CircularProgressIndicator(color: Colors.white)
                   : const Text(
                       'Procéder au paiement',
                       style: TextStyle(
@@ -198,7 +198,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
   void _verifyPaymentStatus() {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Paiement vérifié avec succès'))
+      const SnackBar(content: Text('Paiement vérifié avec succès'))
     );
   }
     Future<void> _handleExternalLink(String url) async {
@@ -221,9 +221,9 @@ class _PaymentWebViewState extends State<PaymentWebView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Paiement'),
+        title: const Text('Paiement'),
         leading: IconButton(
-          icon: Icon(Icons.close),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -231,7 +231,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
         children: [
           WebViewWidget(controller: _controller),
           if (isLoading)
-            Center(
+            const Center(
               child: CircularProgressIndicator(),
             ),
         ],

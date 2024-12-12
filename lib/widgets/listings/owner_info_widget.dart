@@ -52,7 +52,7 @@ class OwnerInfoWidget extends StatelessWidget {
                       color: AppTheme.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Vendeur Pro',
                       style: TextStyle(
                         color: AppTheme.primaryColor,

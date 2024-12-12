@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: const Color(0xFFFE9920)),
+            borderSide: const BorderSide(color: Color(0xFFFE9920)),
           ),
           contentPadding: const EdgeInsets.all(16),
         ),
