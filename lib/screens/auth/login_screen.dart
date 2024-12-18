@@ -32,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (value == null || value.isEmpty) {
       return 'L\'email est requis';
     }
+    value = value.trim();
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
       return 'Veuillez entrer un email valide';
     }
