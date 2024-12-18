@@ -32,21 +32,34 @@ class ReservationService {
   }
 
   Future<List<DateTime>> fetchUnavailableDates(int listingId) async {
+    print('--- Fetching Unavailable Dates for Listing $listingId ---');
+    final token = await TokenService.getToken();
     final url = Uri.parse('${AppConfig.baseUrl}/listings/$listingId/unavailable-dates');
+    
     try {
-      final response = await http.get(url, headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      });
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
       
+      print('Code réponse : ${response.statusCode}');
+      print('Réponse : ${response.body}');
+
       if (response.statusCode == 200) {
         final List<dynamic> dates = jsonDecode(response.body);
         return dates.map((date) => DateTime.parse(date)).toList();
       } else {
-        throw Exception('Échec du chargement des dates. Code : ${response.statusCode}');
+        print('Erreur serveur: ${response.statusCode}');
+        print('Détails: ${response.body}');
+        throw Exception('Échec du chargement des dates (${response.statusCode})');
       }
     } catch (e) {
-      throw Exception('Erreur lors de la récupération des dates : $e');
+      print('Erreur lors de la récupération des dates: $e');
+      throw Exception('Erreur lors de la récupération des dates: $e');
     }
   }
 
@@ -57,27 +70,35 @@ class ReservationService {
     final token = await TokenService.getToken();
     print('Token obtenu : $token');
 
-    final response = await http.post(
-      Uri.parse('${AppConfig.baseUrl}/reservations'), // Corrigé
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode(reservationData),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/reservations'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(reservationData),
+      );
 
-    print('Code réponse : ${response.statusCode}');
-    print('Réponse : ${response.body}');
+      print('Code réponse : ${response.statusCode}');
+      print('Réponse : ${response.body}');
 
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      print('Réservation créée avec succès : $data');
-      return Reservation.fromJson(data);
-    } else {
-      print('Erreur lors de la création de la réservation');
-      print('Détails de l\'erreur : ${response.body}');
-      throw Exception('Failed to create reservation');
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        print('Réservation créée avec succès : $data');
+        return Reservation.fromJson(data);
+      } else {
+        final errorBody = jsonDecode(response.body);
+        final errorMessage = errorBody['message'] ?? 'Erreur inconnue';
+        print('Erreur lors de la création de la réservation: $errorMessage');
+        print('Code d\'erreur: ${response.statusCode}');
+        print('Détails de l\'erreur : ${response.body}');
+        throw Exception('Échec de la création de la réservation: $errorMessage (${response.statusCode})');
+      }
+    } catch (e) {
+      print('Exception lors de la création de la réservation: $e');
+      throw Exception('Erreur lors de la création de la réservation: $e');
     }
   }
 
