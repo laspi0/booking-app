@@ -19,11 +19,14 @@ class _HomeTabState extends State<HomeTab> {
   final HomeTabController _controller = HomeTabController();
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
+  final FocusNode _searchFocusNode = FocusNode(); // Ajoutez cette ligne
 
   @override
   void initState() {
     super.initState();
+
     _controller.fetchListings(setState);
+    _searchFocusNode.dispose(); // Ajoutez cette ligne
   }
 
   // Méthode de rafraîchissement
@@ -296,8 +299,7 @@ class _HomeTabState extends State<HomeTab> {
                                     child: Container(
                                       margin: const EdgeInsets.only(right: 12),
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
+                                          horizontal: 16),
                                       height: 40,
                                       decoration: BoxDecoration(
                                         color: Colors.grey[200],
@@ -314,13 +316,24 @@ class _HomeTabState extends State<HomeTab> {
                                           Expanded(
                                             child: TextField(
                                               decoration: InputDecoration(
-                                                hintText: 'Rechercher un logement',
+                                                hintText:
+                                                    'Rechercher un logement',
                                                 hintStyle: TextStyle(
                                                   color: Colors.grey[600],
                                                   fontSize: 16,
                                                 ),
                                                 border: InputBorder.none,
+                                                enabledBorder: InputBorder.none,
+                                                focusedBorder: InputBorder.none,
+                                                fillColor: Colors.grey[
+                                                    200], // Même couleur que le Container
+                                                filled:
+                                                    true, // Active le remplissage
                                                 contentPadding: EdgeInsets.zero,
+                                              ),
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black,
                                               ),
                                               onChanged: (value) {
                                                 _controller.searchListings(
@@ -366,7 +379,8 @@ class _HomeTabState extends State<HomeTab> {
                               padding: const EdgeInsets.all(16),
                               itemCount: _controller.filteredListings.length,
                               itemBuilder: (context, index) {
-                                final listing = _controller.filteredListings[index];
+                                final listing =
+                                    _controller.filteredListings[index];
                                 return _buildListingCard(listing, index);
                               },
                             ),
