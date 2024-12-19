@@ -252,13 +252,8 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                           const SizedBox(width: 24),
                           _buildFeature(
-                            Icons.bed,
-                            '${index + 2} chambres',
-                          ),
-                          const SizedBox(width: 24),
-                          _buildFeature(
-                            Icons.bathroom,
-                            '${index + 1} sdb',
+                            Icons.home,
+                            listing.type,
                           ),
                         ],
                       ),
