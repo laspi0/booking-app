@@ -3,7 +3,7 @@ import 'package:register/models/comment_model.dart';
 
 class CommentSection extends StatefulWidget {
   final TextEditingController commentController;
-  final Future<void> Function() onPostComment;
+  final Future<Comment> Function() onPostComment;
   final List<Comment> comments;
   final bool isLoading;
 
@@ -20,6 +20,24 @@ class CommentSection extends StatefulWidget {
 }
 
 class _CommentSectionState extends State<CommentSection> {
+  List<Comment> _allComments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _allComments = List.from(widget.comments);
+  }
+
+  Future<void> _postComment() async {
+    if (widget.commentController.text.isNotEmpty) {
+      final newComment = await widget.onPostComment();
+      setState(() {
+        _allComments.insert(0, newComment);
+      });
+      widget.commentController.clear();
+    }
+  }
+
   void _showCommentsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -52,54 +70,9 @@ class _CommentSectionState extends State<CommentSection> {
                 ),
                 child: Column(
                   children: [
-                    // Drag handle
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      width: 60,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    
-                    // Title
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      child: Text(
-                        'Discussions',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-
-                    // Comments List
-                    Expanded(
-                      child: widget.isLoading
-                          ? Center(
-                              child: CircularProgressIndicator(
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            )
-                          : ListView.separated(
-                              controller: controller,
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: widget.comments.length,
-                              separatorBuilder: (context, index) => Divider(
-                                color: Colors.grey[200],
-                                height: 1,
-                              ),
-                              itemBuilder: (context, index) {
-                                final comment = widget.comments[index];
-                                return _buildCommentCard(comment);
-                              },
-                            ),
-                    ),
-
-                    // Comment Input
+                    _buildDragHandle(),
+                    _buildTitle(),
+                    _buildCommentsList(controller),
                     _buildCommentInput(),
                   ],
                 ),
@@ -108,6 +81,56 @@ class _CommentSectionState extends State<CommentSection> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      width: 60,
+      height: 6,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Text(
+        'Discussions',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentsList(ScrollController controller) {
+    return Expanded(
+      child: widget.isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).primaryColor,
+              ),
+            )
+          : ListView.separated(
+              controller: controller,
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _allComments.length,
+              separatorBuilder: (context, index) => Divider(
+                color: Colors.grey[200],
+                height: 1,
+              ),
+              itemBuilder: (context, index) {
+                final comment = _allComments[index];
+                return _buildCommentCard(comment);
+              },
+            ),
     );
   }
 
@@ -130,43 +153,7 @@ class _CommentSectionState extends State<CommentSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                child: Text(
-                  (comment.user?.name ?? 'A')[0].toUpperCase(),
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      comment.user?.name ?? 'Utilisateur anonyme',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Text(
-                      _formatDate(comment.createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          _buildCommentHeader(comment),
           SizedBox(height: 12),
           Text(
             comment.content,
@@ -177,6 +164,50 @@ class _CommentSectionState extends State<CommentSection> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCommentHeader(Comment comment) {
+    return Row(
+      children: [
+        _buildCommentAvatar(comment),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                comment.user?.name ?? 'Utilisateur anonyme',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                _formatDate(comment.createdAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommentAvatar(Comment comment) {
+    return CircleAvatar(
+      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      child: Text(
+        (comment.user?.name ?? 'A')[0].toUpperCase(),
+        style: TextStyle(
+          color: Theme.of(context).primaryColor,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -201,44 +232,47 @@ class _CommentSectionState extends State<CommentSection> {
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: TextField(
-                controller: widget.commentController,
-                decoration: InputDecoration(
-                  hintText: 'Écrivez votre commentaire...',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  border: InputBorder.none,
-                ),
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 16,
-                ),
-                maxLines: null,
-              ),
-            ),
+            child: _buildCommentTextField(),
           ),
           SizedBox(width: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(Icons.send, color: Colors.white),
-              onPressed: () {
-                if (widget.commentController.text.isNotEmpty) {
-                  widget.onPostComment();
-                  widget.commentController.clear();
-                }
-              },
-            ),
-          ),
+          _buildSendButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCommentTextField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: TextField(
+        controller: widget.commentController,
+        decoration: InputDecoration(
+          hintText: 'Écrivez votre commentaire...',
+          hintStyle: TextStyle(color: Colors.grey[500]),
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          border: InputBorder.none,
+        ),
+        style: TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+        ),
+        maxLines: null,
+      ),
+    );
+  }
+
+  Widget _buildSendButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(Icons.send, color: Colors.white),
+        onPressed: _postComment,
       ),
     );
   }
@@ -284,7 +318,7 @@ class _CommentSectionState extends State<CommentSection> {
                 ),
                 SizedBox(width: 10),
                 Text(
-                  '${widget.comments.length} commentaires',
+                  '${_allComments.length} commentaires',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,

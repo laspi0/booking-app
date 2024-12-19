@@ -168,4 +168,6 @@ class ListingService {
       throw Exception('Failed to create listing: $e');
     }
   }
+
+  getUserData() {}
 }
