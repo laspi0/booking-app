@@ -26,81 +26,86 @@ class _CommentSectionState extends State<CommentSection> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (_, controller) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: Offset(0, -5),
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.8,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder: (_, controller) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Drag handle
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    width: 60,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: Offset(0, -5),
                     ),
-                  ),
-                  
-                  // Title
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: Text(
-                      'Discussions',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Drag handle
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      width: 60,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ),
+                    
+                    // Title
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Text(
+                        'Discussions',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
 
-                  // Comments List
-                  Expanded(
-                    child: widget.isLoading
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              color: Theme.of(context).primaryColor,
+                    // Comments List
+                    Expanded(
+                      child: widget.isLoading
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            )
+                          : ListView.separated(
+                              controller: controller,
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: widget.comments.length,
+                              separatorBuilder: (context, index) => Divider(
+                                color: Colors.grey[200],
+                                height: 1,
+                              ),
+                              itemBuilder: (context, index) {
+                                final comment = widget.comments[index];
+                                return _buildCommentCard(comment);
+                              },
                             ),
-                          )
-                        : ListView.separated(
-                            controller: controller,
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: widget.comments.length,
-                            separatorBuilder: (context, index) => Divider(
-                              color: Colors.grey[200],
-                              height: 1,
-                            ),
-                            itemBuilder: (context, index) {
-                              final comment = widget.comments[index];
-                              return _buildCommentCard(comment);
-                            },
-                          ),
-                  ),
+                    ),
 
-                  // Comment Input
-                  _buildCommentInput(),
-                ],
-              ),
-            );
-          },
+                    // Comment Input
+                    _buildCommentInput(),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -208,6 +213,10 @@ class _CommentSectionState extends State<CommentSection> {
                   hintStyle: TextStyle(color: Colors.grey[500]),
                   contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   border: InputBorder.none,
+                ),
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
                 ),
                 maxLines: null,
               ),
