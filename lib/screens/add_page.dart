@@ -36,8 +36,6 @@ class _AddPageState extends State<AddPage> {
   final _priceController = TextEditingController();
   final _measurementController = TextEditingController();
   final _addressController = TextEditingController();
-  final _bedroomsController = TextEditingController();
-  final _bathroomsController = TextEditingController();
 
   String? _selectedType;
   List<XFile> _photos = [];
@@ -49,8 +47,6 @@ class _AddPageState extends State<AddPage> {
     _priceController.dispose();
     _measurementController.dispose();
     _addressController.dispose();
-    _bedroomsController.dispose();
-    _bathroomsController.dispose();
     super.dispose();
   }
 
@@ -60,12 +56,13 @@ class _AddPageState extends State<AddPage> {
     setState(() {
       _photos = pickedFiles;
     });
-    }
+  }
 
   Future<void> _submitListing() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez remplir tous les champs requis')),
+        const SnackBar(
+            content: Text('Veuillez remplir tous les champs requis')),
       );
       return;
     }
@@ -78,7 +75,7 @@ class _AddPageState extends State<AddPage> {
     }
 
     try {
-      Listing listing = await _listingService.createListing(
+      await _listingService.createListing(
         title: _titleController.text,
         description: _descriptionController.text,
         price: double.parse(_priceController.text),
@@ -88,14 +85,18 @@ class _AddPageState extends State<AddPage> {
         photos: _photos,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Annonce créée : ${listing.title}')),
-      );
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Annonce créée avec succès')),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la création : $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la création : $e')),
+        );
+      }
     }
   }
 
@@ -258,7 +259,8 @@ class _AddPageState extends State<AddPage> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(20),
         ),
-        validator: (value) => value?.isEmpty == true ? 'Ce champ est requis' : null,
+        validator: (value) =>
+            value?.isEmpty == true ? 'Ce champ est requis' : null,
       ),
     );
   }
@@ -312,7 +314,8 @@ class _AddPageState extends State<AddPage> {
                       const SizedBox(height: 25),
                       const Text(
                         'Informations principales',
-                        style: TextStyle(/*  */
+                        style: TextStyle(
+                          /*  */
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -357,56 +360,41 @@ class _AddPageState extends State<AddPage> {
                           ),
                         ),
                         child: DropdownButtonFormField<String>(
-  value: _selectedType,
-  decoration: const InputDecoration(
-    hintText: 'Type de bien',
-    prefixIcon: Icon(
-      Icons.home,
-      color: AppTheme.primaryColor,
-      size: 22,
-    ),
-    border: InputBorder.none,
-    contentPadding: EdgeInsets.all(20),
-  ),
-  items: ['room', 'studio', 'apartment', 'villa']  // Utiliser les valeurs en anglais
-      .map((String type) {
-    return DropdownMenuItem<String>(
-      value: type,
-      child: Text(_getTypeLabel(type)),  // Fonction pour afficher le label en français
-    );
-  }).toList(),
-  onChanged: (value) {
-    setState(() {
-      _selectedType = value;
-    });
-  },
-  validator: (value) =>
-      value == null ? 'Veuillez sélectionner un type' : null,
-),
+                          value: _selectedType,
+                          decoration: const InputDecoration(
+                            hintText: 'Type de bien',
+                            prefixIcon: Icon(
+                              Icons.home,
+                              color: AppTheme.primaryColor,
+                              size: 22,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(20),
+                          ),
+                          items: [
+                            'room',
+                            'studio',
+                            'apartment',
+                            'villa'
+                          ] // Utiliser les valeurs en anglais
+                              .map((String type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(_getTypeLabel(
+                                  type)), // Fonction pour afficher le label en français
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedType = value;
+                            });
+                          },
+                          validator: (value) => value == null
+                              ? 'Veuillez sélectionner un type'
+                              : null,
+                        ),
                       ),
                       const SizedBox(height: 15),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              _bedroomsController,
-                              'Chambres',
-                              Icons.bed,
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: _buildTextField(
-                              _bathroomsController,
-                              'Salles de bain',
-                              Icons.bathroom,
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 25),
                       const Text(
                         'Localisation',
                         style: TextStyle(
@@ -445,8 +433,9 @@ class _AddPageState extends State<AddPage> {
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.all(20),
                           ),
-                          validator: (value) =>
-                              value?.isEmpty == true ? 'Ce champ est requis' : null,
+                          validator: (value) => value?.isEmpty == true
+                              ? 'Ce champ est requis'
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -457,7 +446,10 @@ class _AddPageState extends State<AddPage> {
                           height: 60,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [AppTheme.primaryColor, AppTheme.primaryColor],
+                              colors: [
+                                AppTheme.primaryColor,
+                                AppTheme.primaryColor
+                              ],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
