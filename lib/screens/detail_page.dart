@@ -86,44 +86,42 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     }
   }
 
-  Future<void> _postComment() async {
-    final content = _commentController.text.trim();
-    if (content.isEmpty) return;
+ Future<void> _postComment() async {
+  final content = _commentController.text.trim();
+  if (content.isEmpty) return;
 
-    if (mounted) {
-      setState(() => _isPosting = true);
-    }
-
-    try {
-      final newComment = await _commentService.postComment(
-        listingId: widget.listing.id,
-        content: content,
-        token: widget.user.token ?? '',
-      );
-
-      if (mounted && newComment != null) {
-        setState(() {
-          // Créez manuellement un nouvel objet Comment avec les informations de l'utilisateur actuel
-          final commentWithUser = Comment(
-            id: newComment.id,
-            userId: widget.user.id,
-            listingId: widget.listing.id,
-            content: content,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            user: widget.user, // Utilisez l'utilisateur actuel
-          );
-
-          _comments.insert(0, commentWithUser);
-          _commentController.clear();
-          _isPosting = false;
-          FocusScope.of(context).unfocus();
-        });
-      }
-    } catch (e) {
-      _handleError('Erreur lors de l\'envoi du commentaire', e);
-    }
+  if (mounted) {
+    setState(() => _isPosting = true);
   }
+
+  try {
+    final newComment = await _commentService.postComment(
+      listingId: widget.listing.id,
+      content: content,
+      token: widget.user.token ?? '',
+    );
+
+    if (mounted && newComment != null) {
+      setState(() {
+        final commentWithUser = Comment(
+          id: newComment.id,
+          userId: widget.user.id,
+          listingId: widget.listing.id,
+          content: content,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          user: widget.user,
+        );
+        _comments.insert(0, commentWithUser);
+        _commentController.clear();
+        _isPosting = false;
+        FocusScope.of(context).unfocus();
+      });
+    }
+  } catch (e) {
+    _handleError('Erreur lors de l\'envoi du commentaire', e);
+  }
+}
 
   void _handleError(String message, dynamic error) {
     if (mounted) {
