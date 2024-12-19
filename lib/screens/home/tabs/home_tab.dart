@@ -121,26 +121,26 @@ class _HomeTabState extends State<HomeTab> {
   Widget _buildListingCard(Listing listing, int index) {
     return GestureDetector(
       onTap: () {
-      final token = widget.user.token;
-      if (token != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ListingDetailPage(
-              listing: listing,
-              user: widget.user,
+        final token = widget.user.token;
+        if (token != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ListingDetailPage(
+                listing: listing,
+                user: widget.user,
+              ),
             ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veuillez vous connecter pour voir les détails'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Veuillez vous connecter pour voir les détails'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
@@ -311,11 +311,21 @@ class _HomeTabState extends State<HomeTab> {
                                             size: 20,
                                           ),
                                           const SizedBox(width: 8),
-                                          Text(
-                                            'Rechercher un logement',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 16,
+                                          Expanded(
+                                            child: TextField(
+                                              decoration: InputDecoration(
+                                                hintText: 'Rechercher un logement',
+                                                hintStyle: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 16,
+                                                ),
+                                                border: InputBorder.none,
+                                                contentPadding: EdgeInsets.zero,
+                                              ),
+                                              onChanged: (value) {
+                                                _controller.searchListings(
+                                                    value, setState);
+                                              },
                                             ),
                                           ),
                                         ],
@@ -354,9 +364,9 @@ class _HomeTabState extends State<HomeTab> {
                             child: ListView.builder(
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.all(16),
-                              itemCount: _controller.listings.length,
+                              itemCount: _controller.filteredListings.length,
                               itemBuilder: (context, index) {
-                                final listing = _controller.listings[index];
+                                final listing = _controller.filteredListings[index];
                                 return _buildListingCard(listing, index);
                               },
                             ),

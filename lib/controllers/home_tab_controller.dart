@@ -10,8 +10,10 @@ class HomeTabController {
 
   // État
   List<Listing> listings = [];
+  List<Listing> filteredListings = [];
   bool isLoading = true;
   String? error;
+  String searchQuery = '';
 
   // Données statiques
   final List<String> quartiers = [
@@ -29,6 +31,21 @@ class HomeTabController {
 
   final List<String> types = ['Récent', 'Populaire', 'Meilleures offres'];
 
+  void searchListings(String query, Function setState) {
+    searchQuery = query.toLowerCase();
+    setState(() {
+      if (searchQuery.isEmpty) {
+        filteredListings = List.from(listings);
+      } else {
+        filteredListings = listings.where((listing) {
+          return listing.title.toLowerCase().contains(searchQuery) ||
+                 listing.address.toLowerCase().contains(searchQuery) ||
+                 listing.price.toString().contains(searchQuery);
+        }).toList();
+      }
+    });
+  }
+
   Future<void> fetchListings(Function setState) async {
     try {
       setState(() {
@@ -42,6 +59,7 @@ class HomeTabController {
           listing.isFavorited = favoriteListingIds.contains(listing.id);
           return listing;
         }).toList();
+        filteredListings = List.from(listings);
         isLoading = false;
       });
     } catch (e) {
@@ -67,6 +85,11 @@ class HomeTabController {
       if (success) {
         setState(() {
           listings[listingIndex].isFavorited = newFavoritedState;
+          // Mettre à jour également la liste filtrée
+          final filteredIndex = filteredListings.indexWhere((l) => l.id == listingId);
+          if (filteredIndex != -1) {
+            filteredListings[filteredIndex].isFavorited = newFavoritedState;
+          }
         });
       }
     } catch (e) {
@@ -89,14 +112,5 @@ class HomeTabController {
         builder: (context) => const AddPage(),
       ),
     );
-
-    void navigateToAddPage(BuildContext context) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AddPage(),
-        ),
-      );
-    }
   }
 }
