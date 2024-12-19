@@ -1,5 +1,4 @@
-// lib/models/listing.dart
-import '../models/user.dart'; // Importez le modèle User
+import 'package:register/models/user.dart';
 
 class Listing {
   final int id;
@@ -12,7 +11,7 @@ class Listing {
   final String status;
   final List<String> photos;
   bool isFavorited;
-  final User? owner; // Ajoutez cette ligne (optionnel)
+  final User? owner;
 
   Listing({
     required this.id,
@@ -24,23 +23,33 @@ class Listing {
     required this.address,
     required this.status,
     required this.photos,
-    this.owner, // Ajoutez cette ligne
+    this.owner,
     this.isFavorited = false,
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
-    return Listing(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      price: double.parse(json['price'].toString()),
-      measurement: json['measurement'],
-      type: json['type'],
-      address: json['address'],
-      status: json['status'],
-      photos: (json['photos'] as List).map((photo) => photo['path'] as String).toList(),
-      isFavorited: json['is_favorited'] ?? false,
-      owner: json['user'] != null ? User.fromJson({'user': json['user']}) : null, // Ajoutez cette ligne
-    );
+    try {
+      return Listing(
+        id: json['id'] ?? 0,
+        title: json['title'] ?? '',
+        description: json['description'] ?? '',
+        price: json['price'] != null ? double.parse(json['price'].toString()) : 0.0,
+        measurement: json['measurement'] ?? '',
+        type: json['type'] ?? '',
+        address: json['address'] ?? '',
+        status: json['status'] ?? 'pending',
+        photos: json['photos'] != null 
+          ? (json['photos'] as List).map((photo) => 
+              photo is Map ? (photo['path'] as String? ?? '') : ''
+            ).toList()
+          : [],
+        isFavorited: json['is_favorited'] ?? false,
+        owner: json['user'] != null ? User.fromJson({'user': json['user']}) : null,
+      );
+    } catch (e) {
+      print('Error parsing Listing JSON: $e');
+      print('Received JSON: $json');
+      rethrow;
+    }
   }
 }
