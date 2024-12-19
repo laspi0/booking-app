@@ -369,14 +369,14 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     );
   }
 
-  Widget _buildCommentSection() {
-    return CommentSection(
-      commentController: _commentController,
-      onPostComment: _postComment,
-      comments: _comments,
-      isLoading: _isLoading,
-    );
-  }
+ Widget _buildCommentSection() {
+  return CommentSection(
+    commentController: _commentController,
+    onPostComment: _postComment,
+    comments: _comments,
+    isLoading: _isLoading,
+  );
+}
 
   Widget _buildBottomContactButton(User listingOwner) {
     return Container(
