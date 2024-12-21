@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
 import '../services/conversation_service.dart';
+import '../services/token_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final Conversation conversation;
@@ -20,16 +21,35 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   String? _error;
   Timer? _timer;
+  int? _currentUserId;
 
   @override
   void initState() {
     super.initState();
+    _initializeUser();
     _fetchMessages();
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted) {
         _fetchMessages();
       }
     });
+  }
+
+  Future<void> _initializeUser() async {
+    try {
+      final user = await TokenService.getUserData();
+      if (mounted) {
+        setState(() {
+          _currentUserId = user?.id;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Erreur lors de la récupération des données utilisateur: $e';
+        });
+      }
+    }
   }
 
   @override
@@ -171,8 +191,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final message = _messages[index];
-                          // Correction ici : comparer avec le sender ID au lieu du recipient ID
-                          final isMe = message.userId == widget.conversation.senderId;
+                          final isMe = message.userId == _currentUserId;
 
                           return Align(
                             alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
