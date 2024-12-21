@@ -21,15 +21,15 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   String? _error;
   Timer? _timer;
-  int? _currentUserId;
+  late int _currentUserId;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _initializeUser();
-    _fetchMessages();
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (mounted) {
+      if (mounted && _isInitialized) {
         _fetchMessages();
       }
     });
@@ -40,13 +40,16 @@ class _ChatScreenState extends State<ChatScreen> {
       final user = await TokenService.getUserData();
       if (mounted) {
         setState(() {
-          _currentUserId = user?.id;
+          _currentUserId = user?.id ?? 0; // Assuming 0 is a valid default value or handle it as needed
+          _isInitialized = true;
         });
+        _fetchMessages();
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _error = 'Erreur lors de la récupération des données utilisateur: $e';
+          _isLoading = false;
         });
       }
     }
@@ -60,7 +63,21 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  bool _isCurrentUserSender() {
+    return _currentUserId == widget.conversation.senderId;
+  }
+
+  bool _isMessageFromCurrentUser(Message message) {
+    if (_isCurrentUserSender()) {
+      return message.userId == widget.conversation.senderId;
+    } else {
+      return message.userId == widget.conversation.recipientId;
+    }
+  }
+
   Future<void> _fetchMessages() async {
+    if (!_isInitialized) return;
+    
     try {
       final messages = await ConversationService.getMessages(widget.conversation.id);
       await ConversationService.markAsRead(widget.conversation.id);
@@ -68,17 +85,11 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _messages = messages;
         });
 
         if (messages.length > _messages.length) {
-          setState(() {
-            _messages = messages;
-          });
           _scrollToBottom();
-        } else {
-          setState(() {
-            _messages = messages;
-          });
         }
       }
     } catch (e) {
@@ -126,8 +137,25 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  String _getOtherUserName() {
+    return _isCurrentUserSender() 
+        ? widget.conversation.recipientName 
+        : widget.conversation.senderName;
+  }
+
+  String _getOtherUserInitial() {
+    final name = _getOtherUserName();
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -144,7 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundColor: Colors.grey[300],
               child: Text(
-                widget.conversation.senderName[0].toUpperCase(),
+                _getOtherUserInitial(),
                 style: const TextStyle(color: Colors.black),
               ),
             ),
@@ -153,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.conversation.senderName,
+                  _getOtherUserName(),
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,
@@ -191,7 +219,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final message = _messages[index];
-                          final isMe = message.userId == _currentUserId;
+                          final isMe = _isMessageFromCurrentUser(message);
 
                           return Align(
                             alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
