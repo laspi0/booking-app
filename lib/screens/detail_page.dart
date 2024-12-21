@@ -86,42 +86,42 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     }
   }
 
- Future<void> _postComment() async {
-  final content = _commentController.text.trim();
-  if (content.isEmpty) return;
+  Future<void> _postComment() async {
+    final content = _commentController.text.trim();
+    if (content.isEmpty) return;
 
-  if (mounted) {
-    setState(() => _isPosting = true);
-  }
-
-  try {
-    final newComment = await _commentService.postComment(
-      listingId: widget.listing.id,
-      content: content,
-      token: widget.user.token ?? '',
-    );
-
-    if (mounted && newComment != null) {
-      setState(() {
-        final commentWithUser = Comment(
-          id: newComment.id,
-          userId: widget.user.id,
-          listingId: widget.listing.id,
-          content: content,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          user: widget.user,
-        );
-        _comments.insert(0, commentWithUser);
-        _commentController.clear();
-        _isPosting = false;
-        FocusScope.of(context).unfocus();
-      });
+    if (mounted) {
+      setState(() => _isPosting = true);
     }
-  } catch (e) {
-    _handleError('Erreur lors de l\'envoi du commentaire', e);
+
+    try {
+      final newComment = await _commentService.postComment(
+        listingId: widget.listing.id,
+        content: content,
+        token: widget.user.token ?? '',
+      );
+
+      if (mounted && newComment != null) {
+        setState(() {
+          final commentWithUser = Comment(
+            id: newComment.id,
+            userId: widget.user.id,
+            listingId: widget.listing.id,
+            content: content,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            user: widget.user,
+          );
+          _comments.insert(0, commentWithUser);
+          _commentController.clear();
+          _isPosting = false;
+          FocusScope.of(context).unfocus();
+        });
+      }
+    } catch (e) {
+      _handleError('Erreur lors de l\'envoi du commentaire', e);
+    }
   }
-}
 
   void _handleError(String message, dynamic error) {
     if (mounted) {
@@ -286,6 +286,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                 OwnerInfoWidget(
                   owner: listingOwner,
                   onPhoneCall: _listingController.makePhoneCall,
+                  currentUserId: widget.user.id, // Ajout de cette ligne
                 ),
                 const SizedBox(height: 20),
                 _buildListingTitle(),
@@ -369,14 +370,14 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     );
   }
 
- Widget _buildCommentSection() {
-  return CommentSection(
-    commentController: _commentController,
-    onPostComment: _postComment,
-    comments: _comments,
-    isLoading: _isLoading,
-  );
-}
+  Widget _buildCommentSection() {
+    return CommentSection(
+      commentController: _commentController,
+      onPostComment: _postComment,
+      comments: _comments,
+      isLoading: _isLoading,
+    );
+  }
 
   Widget _buildBottomContactButton(User listingOwner) {
     return Container(

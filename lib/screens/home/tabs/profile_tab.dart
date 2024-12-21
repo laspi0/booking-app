@@ -1,12 +1,69 @@
 import 'package:flutter/material.dart';
-
+import 'package:register/screens/auth/login_screen.dart';
 import '../../../config/theme.dart';
 import '../../../models/user.dart';
+import '../../../services/auth_service.dart';
 
 class ProfileTab extends StatelessWidget {
-   final User user;
+  final User user;
+  final AuthService _authService = AuthService();
   
-  const ProfileTab({super.key, required this.user});
+  ProfileTab({super.key, required this.user});
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      bool confirmLogout = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Déconnexion'),
+            content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(
+                  'Déconnexion',
+                  style: TextStyle(color: Colors.red[400]),
+                ),
+              ),
+            ],
+          );
+        },
+      ) ?? false;
+
+      if (confirmLogout) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+
+        await _authService.logout();
+        
+        // ignore: use_build_context_synchronously
+        Navigator.of(context).pop();
+        // ignore: use_build_context_synchronously
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } catch (e) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la déconnexion: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   Widget _buildStat(String label, String value) {
     return Column(
@@ -123,6 +180,7 @@ class ProfileTab extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
+                    // Photo de profil avec gradient et bouton d'édition
                     Stack(
                       children: [
                         Container(
@@ -189,9 +247,9 @@ class ProfileTab extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 25),
-                    const Text(
-                      'Lassana Diarra',
-                      style: TextStyle(
+                    Text(
+                      user.name,
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -217,6 +275,7 @@ class ProfileTab extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
+                    // Statistiques
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 25),
                       decoration: BoxDecoration(
@@ -270,6 +329,7 @@ class ProfileTab extends StatelessWidget {
                   ],
                 ),
               ),
+              // Menu des options
               Container(
                 margin: const EdgeInsets.only(top: 10),
                 decoration: BoxDecoration(
@@ -321,9 +381,7 @@ class ProfileTab extends StatelessWidget {
                       title: 'Déconnexion',
                       showDivider: false,
                       textColor: Colors.red[400],
-                      onTap: () {
-                        // Logique de déconnexion
-                      },
+                      onTap: () => _handleLogout(context),
                     ),
                     const SizedBox(height: 20),
                   ],

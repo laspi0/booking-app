@@ -1,17 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:register/models/user.dart';
-
-import '../../config/theme.dart';
+import 'package:register/config/theme.dart';
+import 'package:register/services/conversation_service.dart';
+import 'package:register/models/conversation.dart';
+import 'package:register/screens/chat_screen.dart';
 
 class OwnerInfoWidget extends StatelessWidget {
   final User owner;
   final Function(String) onPhoneCall;
+  final int currentUserId;
 
   const OwnerInfoWidget({
     Key? key,
     required this.owner,
     required this.onPhoneCall,
+    required this.currentUserId,
   }) : super(key: key);
+
+  Future<void> _handleMessagePress(BuildContext context) async {
+    try {
+      // Afficher l'indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Vérifier si une conversation existe déjà
+      Conversation? conversation = await ConversationService.getConversationByUsers(
+        currentUserId,
+        owner.id,
+      );
+
+      // Si aucune conversation n'existe, en créer une nouvelle
+      if (conversation == null) {
+        conversation = await ConversationService.startConversation(owner.id);
+      }
+
+      // Fermer l'indicateur de chargement
+      Navigator.pop(context);
+
+      // Naviguer vers l'écran de chat
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(conversation: conversation!),
+          ),
+        );
+      }
+    } catch (e) {
+      // Fermer l'indicateur de chargement
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +148,7 @@ class OwnerInfoWidget extends StatelessWidget {
                   Icons.message_outlined,
                   color: AppTheme.primaryColor,
                 ),
-                onPressed: () {},
+                onPressed: () => _handleMessagePress(context),
                 tooltip: 'Message',
               ),
               Container(
