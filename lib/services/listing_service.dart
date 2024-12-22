@@ -5,14 +5,15 @@ import '../config/app_config.dart';
 import 'token_service.dart';
 
 class ListingService {
-  final Dio _dio = Dio()..interceptors.add(LogInterceptor(
-    request: true,
-    requestHeader: true,
-    requestBody: true,
-    responseHeader: true,
-    responseBody: true,
-    error: true,
-  ));
+  final Dio _dio = Dio()
+    ..interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ));
 
   Future<List<Listing>> getListings() async {
     try {
@@ -42,7 +43,8 @@ class ListingService {
       }
 
       if (response.statusCode != 200) {
-        throw Exception('Server returned ${response.statusCode}: ${response.data['message'] ?? 'Unknown error'}');
+        throw Exception(
+            'Server returned ${response.statusCode}: ${response.data['message'] ?? 'Unknown error'}');
       }
 
       if (response.data is List) {
@@ -86,7 +88,8 @@ class ListingService {
       }
 
       if (response.statusCode != 200) {
-        throw Exception('Server returned ${response.statusCode}: ${response.data['message'] ?? 'Unknown error'}');
+        throw Exception(
+            'Server returned ${response.statusCode}: ${response.data['message'] ?? 'Unknown error'}');
       }
 
       return Listing.fromJson(response.data);
@@ -96,7 +99,7 @@ class ListingService {
     }
   }
 
- Future<Listing> createListing({
+  Future<Listing> createListing({
     required String title,
     required String description,
     required double price,
@@ -106,68 +109,49 @@ class ListingService {
     required List<XFile> photos,
   }) async {
     try {
-      // Validation des données
-      if (title.isEmpty) throw Exception('Le titre ne peut pas être vide');
-      if (description.isEmpty) throw Exception('La description ne peut pas être vide');
-      if (price <= 0) throw Exception('Le prix doit être supérieur à 0');
-      if (measurement.isEmpty) throw Exception('La surface ne peut pas être vide');
-      if (photos.isEmpty) throw Exception('Au moins une photo est requise');
+      // Validation locale alignée avec Laravel
+      _validateInputData(
+        title: title,
+        description: description,
+        price: price,
+        measurement: measurement,
+        type: type,
+        photos: photos,
+      );
 
-      // Vérification du token
-      String? token = await TokenService.getToken();
+      // Récupération et vérification du token
+      final token = await TokenService.getToken();
       if (token == null) {
         throw Exception('Vous devez être connecté pour créer une annonce');
       }
 
-      // Préparation des fichiers photos
-      List<MapEntry<String, MultipartFile>> photoFiles = [];
-      try {
-        for (var photo in photos) {
-          if (await photo.length() > 5 * 1024 * 1024) { // 5 MB limit
-            throw Exception('La photo ${photo.name} dépasse la limite de 5 Mo');
-          }
-          
-          photoFiles.add(
-            MapEntry(
-              'photos[]',
-              await MultipartFile.fromFile(
-                photo.path,
-                filename: photo.name,
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        throw Exception('Erreur lors du traitement des photos: $e');
+      // Validation et traitement des photos
+      final photoFiles = await _processPhotos(photos);
+
+      // Création du FormData avec la structure exacte attendue par Laravel
+      final formData = FormData();
+
+      // Ajout des champs texte avec les noms exacts attendus par Laravel
+      formData.fields.addAll([
+        MapEntry('title', title.trim()),
+        MapEntry('description', description.trim()),
+        MapEntry('price', price.toString()),
+        MapEntry('measurement', measurement.trim()),
+        MapEntry('type', type.trim()),
+        MapEntry('address', address.trim()),
+      ]);
+
+      // Ajout des photos avec le nom de champ attendu par Laravel
+      for (var photoFile in photoFiles) {
+        formData.files.add(MapEntry('photos[]', photoFile));
       }
 
-      // Création du FormData
-      FormData formData = FormData();
-      
-      // Ajout des champs texte
-      Map<String, dynamic> fields = {
-        'title': title.trim(),
-        'description': description.trim(),
-        'price': price.toString(),
-        'measurement': measurement.trim(),
-        'type': type.trim(),
-        'address': address.trim(),
-        'status': 'pending', // Statut par défaut
-      };
-
-      // Ajout des champs au FormData
-      fields.forEach((key, value) {
-        formData.fields.add(MapEntry(key, value));
-      });
-
-      // Ajout des photos au FormData
-      formData.files.addAll(photoFiles);
-
       print('📤 Envoi de la requête à: ${AppConfig.baseUrl}/listings');
-      print('📋 Données envoyées: $fields');
+      print('📋 Données envoyées:');
+      formData.fields
+          .forEach((field) => print('- ${field.key}: ${field.value}'));
       print('📸 Nombre de photos: ${photos.length}');
 
-      // Envoi de la requête
       final response = await _dio.post(
         '${AppConfig.baseUrl}/listings',
         data: formData,
@@ -175,71 +159,119 @@ class ListingService {
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
           },
           validateStatus: (status) => status! < 500,
-          sendTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 30),
         ),
       );
 
       print('📥 Statut de la réponse: ${response.statusCode}');
       print('📄 Données reçues: ${response.data}');
 
-      // Gestion des erreurs de réponse
-      if (response.statusCode == 401) {
-        throw Exception('Session expirée, veuillez vous reconnecter');
-      }
+      return _handleResponse(response);
+    } catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
 
-      if (response.statusCode == 413) {
-        throw Exception('Les fichiers sont trop volumineux');
-      }
+  void _validateInputData({
+    required String title,
+    required String description,
+    required double price,
+    required String measurement,
+    required String type,
+    required List<XFile> photos,
+  }) {
+    if (title.trim().isEmpty || title.length > 255) {
+      throw Exception(
+          'Le titre est requis et ne doit pas dépasser 255 caractères');
+    }
+    if (description.trim().isEmpty) {
+      throw Exception('La description est requise');
+    }
+    if (price <= 0) {
+      throw Exception('Le prix doit être supérieur à 0');
+    }
+    if (measurement.trim().isEmpty) {
+      throw Exception('La surface est requise');
+    }
+    if (!['room', 'studio', 'apartment', 'villa'].contains(type)) {
+      throw Exception('Le type doit être : room, studio, apartment ou villa');
+    }
+    if (photos.isEmpty || photos.length > 10) {
+      throw Exception('Entre 1 et 10 photos sont requises');
+    }
+  }
 
-      if (response.statusCode != 201 && response.statusCode != 200) {
-        String errorMessage = response.data is Map 
-            ? response.data['message'] ?? 'Erreur inconnue'
-            : 'Erreur inconnue';
-        throw Exception('Erreur serveur ${response.statusCode}: $errorMessage');
-      }
+  Future<List<MultipartFile>> _processPhotos(List<XFile> photos) async {
+    List<MultipartFile> photoFiles = [];
 
-      if (response.data == null) {
-        throw Exception('Aucune donnée reçue du serveur');
+    for (var photo in photos) {
+      // Vérifie la taille (2MB = 2 * 1024 * 1024 bytes)
+      if (await photo.length() > 2 * 1024 * 1024) {
+        throw Exception('La photo ${photo.name} dépasse la limite de 2 Mo');
+      }
+      // Vérifie l'extension
+      final extension = photo.name.split('.').last.toLowerCase();
+      if (!['jpeg', 'jpg', 'png', 'gif'].contains(extension)) {
+        throw Exception(
+            'Le format de la photo ${photo.name} n\'est pas supporté. Formats acceptés : JPEG, PNG, GIF');
       }
 
       try {
-        final listing = Listing.fromJson(response.data);
-        print('✅ Annonce créée avec succès. ID: ${listing.id}');
-        return listing;
+        final file = await MultipartFile.fromFile(
+          photo.path,
+          filename: photo.name,
+        );
+        photoFiles.add(file);
       } catch (e) {
-        print('❌ Erreur lors de la conversion des données: $e');
-        print('Structure des données reçues: ${response.data.runtimeType}');
-        print('Données reçues: ${response.data}');
-        throw Exception('Erreur lors de la création de l\'annonce: format de données incorrect');
+        throw Exception(
+            'Erreur lors du traitement de la photo ${photo.name}: $e');
       }
+    }
 
-    } on DioException catch (e) {
+    return photoFiles;
+  }
+
+  Listing _handleResponse(Response response) {
+    if (response.statusCode == 422) {
+      final errors = response.data['errors'] as Map<String, dynamic>? ?? {};
+      throw Exception(_formatValidationErrors(errors));
+    }
+
+    if (response.statusCode == 201) {
+      try {
+        return Listing.fromJson(response.data['listing']);
+      } catch (e) {
+        print('❌ Erreur de conversion des données: $e');
+        throw Exception(
+            'Erreur lors de la création de l\'annonce: format de données incorrect');
+      }
+    }
+
+    throw Exception(
+        'Erreur lors de la création de l\'annonce: ${response.statusCode}');
+  }
+
+  String _formatValidationErrors(Map<String, dynamic> errors) {
+    if (errors.isEmpty) return 'Erreur de validation';
+
+    return errors.entries.map((entry) {
+      final messages = entry.value is List
+          ? (entry.value as List).join(', ')
+          : entry.value.toString();
+      return '${entry.key}: $messages';
+    }).join('\n');
+  }
+
+  void _handleError(dynamic e) {
+    if (e is DioException) {
       print('❌ Erreur Dio: ${e.type}');
       print('Message: ${e.message}');
       print('Réponse: ${e.response?.data}');
-      
-      String errorMessage;
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          errorMessage = 'Délai d\'attente dépassé, veuillez réessayer';
-          break;
-        case DioExceptionType.connectionError:
-          errorMessage = 'Erreur de connexion, vérifiez votre connexion internet';
-          break;
-        default:
-          errorMessage = e.response?.data?['message'] ?? 
-                        'Erreur lors de la création de l\'annonce';
-      }
-      throw Exception(errorMessage);
-      
-    } catch (e) {
+    } else {
       print('❌ Erreur inattendue: $e');
-      throw Exception('Erreur lors de la création de l\'annonce: $e');
     }
   }
 

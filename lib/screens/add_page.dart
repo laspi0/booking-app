@@ -86,15 +86,38 @@ class _AddPageState extends State<AddPage> {
       );
 
       if (mounted) {
+        // Vider les champs après succès
+        _titleController.clear();
+        _descriptionController.clear();
+        _priceController.clear();
+        _measurementController.clear();
+        _addressController.clear();
+        setState(() {
+          _photos = [];
+          _selectedType = null;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Annonce créée avec succès')),
+          const SnackBar(
+            content: Text('Annonce créée avec succès'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = e.toString();
+        // Traiter spécifiquement l'erreur 422
+        if (errorMessage.contains('422')) {
+          errorMessage =
+              'Données invalides. Veuillez vérifier vos informations.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la création : $e')),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
