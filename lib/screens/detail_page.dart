@@ -286,7 +286,8 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                 OwnerInfoWidget(
                   owner: listingOwner,
                   onPhoneCall: _listingController.makePhoneCall,
-                  currentUserId: widget.user.id, // Ajout de cette ligne
+                  currentUserId: widget.user.id,
+                  listingId: widget.listing.id, // Ajoutez cette ligne
                 ),
                 const SizedBox(height: 20),
                 _buildListingTitle(),

@@ -29,17 +29,27 @@ class ConversationService {
     }
   }
 
-  static Future<Conversation> startConversation(int listingId) async {
+  static Future<Conversation> startConversation({
+    required int userId,
+    required int listingId,
+  }) async {
     final response = await http.post(
       Uri.parse('${AppConfig.baseUrl}/listings/$listingId/start-conversation'),
       headers: await _getHeaders(),
+      body: json.encode({
+        'user_id': userId,
+      }),
     );
-
     if (response.statusCode == 201 || response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return Conversation.fromJson(jsonResponse['conversation']);
+      if (jsonResponse['conversation'] != null) {
+        return Conversation.fromJson(jsonResponse['conversation']);
+      } else {
+        throw Exception('Conversation data is null');
+      }
     } else {
-      throw Exception(json.decode(response.body)['message'] ?? 'Failed to start conversation');
+      throw Exception(json.decode(response.body)['message'] ??
+          'Failed to start conversation');
     }
   }
 
@@ -57,7 +67,8 @@ class ConversationService {
     }
   }
 
-   static Future<Conversation?> getConversationByUsers(int userId1, int userId2) async {
+  static Future<Conversation?> getConversationByUsers(
+      int userId1, int userId2) async {
     final response = await http.get(
       Uri.parse('${AppConfig.baseUrl}/conversations/users/$userId1/$userId2'),
       headers: await _getHeaders(),
@@ -84,13 +95,15 @@ class ConversationService {
       final responseData = json.decode(response.body);
       return Message.fromJson(responseData['data']);
     } else {
-      throw Exception(json.decode(response.body)['message'] ?? 'Failed to send message');
+      throw Exception(
+          json.decode(response.body)['message'] ?? 'Failed to send message');
     }
   }
 
   static Future<void> markAsRead(int conversationId) async {
     final response = await http.post(
-      Uri.parse('${AppConfig.baseUrl}/conversations/$conversationId/mark-as-read'),
+      Uri.parse(
+          '${AppConfig.baseUrl}/conversations/$conversationId/mark-as-read'),
       headers: await _getHeaders(),
     );
 

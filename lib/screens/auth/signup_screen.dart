@@ -80,18 +80,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (result['success']) {
-        // Récupération des données utilisateur depuis TokenService
-        final user = await TokenService.getUserData();
+        // Vider les champs
+        _nameController.clear();
+        _emailController.clear();
+        _passwordController.clear();
+        _numberController.clear();
 
-        if (user != null) {
-          // Navigation vers l'écran principal après inscription
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomeScreen(user: user), // HomeScreen personnalisé
-            ),
-          );
-        }
+        // Navigation vers l'écran de connexion
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -213,7 +214,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             'S\'inscrire',
                             style: TextStyle(
                               fontSize: 18,
-                               color: Colors.white,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -224,13 +225,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                          const begin = Offset(-1.0, 0.0); // Début de la transition (à gauche)
-                          const end = Offset.zero; // Fin de la transition (position finale)
-                          const curve = Curves.easeInOut; // Courbe de l'animation
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const LoginScreen(),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                          const begin = Offset(
+                              -1.0, 0.0); // Début de la transition (à gauche)
+                          const end = Offset
+                              .zero; // Fin de la transition (position finale)
+                          const curve =
+                              Curves.easeInOut; // Courbe de l'animation
 
-                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                          var tween = Tween(begin: begin, end: end)
+                              .chain(CurveTween(curve: curve));
                           var offsetAnimation = animation.drive(tween);
 
                           return SlideTransition(
